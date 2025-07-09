@@ -24,6 +24,7 @@ ftfy
 #huggingface_hub[cli] 
 imageio
 imageio-ffmpeg
+mmgp
 
 
 
