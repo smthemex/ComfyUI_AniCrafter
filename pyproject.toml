@@ -3,7 +3,7 @@ name = "anicrafter"
 description = "AniCrafter: Customizing Realistic Human-Centric Animation via Avatar-Background Conditioning in Video Diffusion Models, you can try this methods when use ComfyUI."
 version = "1.0.0"
 license = {file = "LICENSE"}
-dependencies = ["roma", "pytorch3d", "gfpgan", "sam2", "jaxtyping", "tb-nightly", "facexlib", "smplx", "kornia", "accelerate", "diffusers", "facexlib", "accelerate", "tensorboard", "plyfile", "trimesh", "chumpy", "#modelscope", "timm", "transformers>=4.46.2", "onnxruntime-gpu", "sentencepiece", "ftfy", "#huggingface_hub[cli]", "imageio", "imageio-ffmpeg"]
+dependencies = ["roma", "pytorch3d", "gfpgan", "sam2", "jaxtyping","mmgp", "tb-nightly", "facexlib", "smplx", "kornia", "accelerate", "diffusers", "facexlib", "accelerate", "tensorboard", "plyfile", "trimesh", "chumpy", "#modelscope", "timm", "transformers>=4.46.2", "onnxruntime-gpu", "sentencepiece", "ftfy", "#huggingface_hub[cli]", "imageio", "imageio-ffmpeg"]
 
 [project.urls]
 Repository = "https://github.com/smthemex/ComfyUI_AniCrafter"
