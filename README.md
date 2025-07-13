@@ -2,8 +2,8 @@
 [AniCrafter](https://github.com/MyNiuuu/AniCrafter): Customizing Realistic Human-Centric Animation via Avatar-Background Conditioning in Video Diffusion Models, you can try this methods  when use ComfyUI.
 
 # Tips 
-* 当前代码仅能跑通demo测试的输入视频，mask和splm的预处理还没整好。pre_video的高斯pth 第一次使用先选择none，测试显存12G，基于mmgp库的优秀调度； 
-* only demo input now
+* 支持自定义视频的推理，支持预处理视频（mask，背景内绘及smplx剪辑）和json文件的 以及gaussian.pth的复用（首次生成需要选择none）；为避免人脸失真，推理尺寸越大越好。等下个周末再修复一些bug吧。
+* need another weekend to fix bugs
 
 # 1. Installation
 
@@ -49,6 +49,10 @@ str_ = builtins.str
 ├── your comfyUI/models/AniCrafter/
 |   ├──pretrained_models
 |       ├── all fiels  #pretrained_models目录下所有文件及文件结构
+|       ├── propainter
+|           ├── ProPainter.pth #propainter models 下次改成可预加载
+|           ├── raft-things.pth
+|           ├── recurrent_flow_completion.pth
 ```
 * 3.2 [Wan-AI/Wan2.1-I2V-14B-720P](https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-720P/tree/main) download clip,clipvison and vae /下载clip，clipvison 和vae  
 ```
@@ -68,6 +72,7 @@ str_ = builtins.str
 
 # Example
 ![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example.gif)
+![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example.png)
 
 
 #Citation
