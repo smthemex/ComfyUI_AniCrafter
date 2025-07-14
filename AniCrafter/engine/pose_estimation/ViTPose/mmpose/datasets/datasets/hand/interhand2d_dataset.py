@@ -8,7 +8,7 @@ import json_tricks as json
 import numpy as np
 from mmcv import Config, deprecated_api_warning
 
-from mmpose.datasets.builder import DATASETS
+from ...builder import DATASETS
 from ..base import Kpt2dSviewRgbImgTopDownDataset
 
 

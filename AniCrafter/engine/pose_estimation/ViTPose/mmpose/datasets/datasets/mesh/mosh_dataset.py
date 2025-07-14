@@ -5,8 +5,8 @@ from abc import ABCMeta
 import numpy as np
 from torch.utils.data import Dataset
 
-from mmpose.datasets.builder import DATASETS
-from mmpose.datasets.pipelines import Compose
+from ...builder import DATASETS
+from ...pipelines import Compose
 
 
 @DATASETS.register_module()

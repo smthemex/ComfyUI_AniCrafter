@@ -44,7 +44,7 @@ model:
     # for gs renderer
     human_model_path: "./pretrained_models/human_model_files"
     smplx_subdivide_num: 1
-    smplx_type: "smplx"
+    smplx_type: "smplx_2"
     gs_query_dim: 1024
     gs_use_rgb: True
     gs_sh: 3

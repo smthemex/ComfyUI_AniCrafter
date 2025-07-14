@@ -8,8 +8,8 @@ import mmcv
 import numpy as np
 from mmcv import Config, deprecated_api_warning
 
-from mmpose.core.evaluation import keypoint_mpjpe
-from mmpose.datasets.datasets.base import Kpt3dSviewKpt2dDataset
+from ....core.evaluation import keypoint_mpjpe
+from ....datasets.datasets.base import Kpt3dSviewKpt2dDataset
 from ...builder import DATASETS
 
 

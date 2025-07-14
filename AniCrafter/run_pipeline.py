@@ -331,34 +331,58 @@ def prepare_models(dit_path,vae_path, lora_ckpt_path,lora_alpha=1.0):
 
 
 
-def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,AniCrafter_weigths_path,gaussian_files,clear_cache,smplx_mesh_pils_origin_=None,smplx_path_=None,bkgd_pils_origin_=None,max_frames= 81):
+def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,AniCrafter_weigths_path,gaussian_files,clear_cache,preprocess_input,pre_video_dir,use_input_mask,fps,max_frames= 81):
     W, H = image_list[0].size
     H, W = math.ceil(H / 16) * 16, math.ceil(W / 16) * 16
     file_prefix = datetime.now().strftime('%Y%m%d_%H%M%S')
     base_dir=os.path.join(folder_paths.models_dir, 'AniCrafter')
     scene_path = os.path.join(folder_paths.base_path, 'custom_nodes/ComfyUI_AniCrafter/AniCrafter/demo/videos/scene_000000')
 
-    HumanLRMInferrer_ = HumanLRMInferrer(base_dir)
-    HumanLRMInferrer_.load_model()
-    print('lhm_runner init')
+    pose_estimate_path= os.path.join(base_dir,"pretrained_models/human_model_files")
+   # smplx_mesh_pils_origin_ = None
+    if pre_video_dir!="none":
+        print('use test per video data for preprocessing')
+        smplx_mesh_pils_origin = video_to_pil_images(os.path.join(pre_video_dir, 'smplx_video.mp4'), H, W,max_frames)
+        smplx_path = os.path.join(pre_video_dir, 'smplx_params')
+        bkgd_pils_origin = video_to_pil_images(os.path.join(pre_video_dir, 'bkgd_video.mp4'), H, W,max_frames)
 
-    SMPLX_MODEL=prepare_smplx_model(AniCrafter_weigths_path)
-    print('SMPLX_MODEL init')
+    else:
+        if not  preprocess_input : # use test video
+            print('use test default data for preprocessing')
+            smplx_mesh_pils_origin = video_to_pil_images(os.path.join(scene_path, 'smplx_video.mp4'), H, W,max_frames)
+            smplx_path = os.path.join(scene_path, 'smplx_params')
+            bkgd_pils_origin = video_to_pil_images(os.path.join(scene_path, 'bkgd_video.mp4'), H, W,max_frames)
 
+        else:
+            # 分别获取视频的人物mask，背景内绘，smplx的json参数及合成后的视频
+            from .ProPainter.inference_propainter import InferencePropainter
+            from .parse_video import get_hunman_mask
+            from .engine.pose_estimation.video2motion import get_smplx_mesh
 
-    if  smplx_mesh_pils_origin_ is None: #mesh phils list
-        smplx_mesh_pils_origin = video_to_pil_images(os.path.join(scene_path, 'smplx_video.mp4'), H, W,max_frames)
-    else:
-        smplx_mesh_pils_origin = crop_image(smplx_mesh_pils_origin_,max_frames)
-        
-    if  smplx_path_ is None:
-        smplx_path = os.path.join(scene_path, 'smplx_params')
-    else:
-        smplx_path = smplx_path_
-    if bkgd_pils_origin_ is None:
-        bkgd_pils_origin = video_to_pil_images(os.path.join(scene_path, 'bkgd_video.mp4'), H, W,max_frames)
-    else:
-        bkgd_pils_origin = crop_image(bkgd_pils_origin_, max_frames)
+            print("Start preprocess_input")
+            smplx_output_folder=os.path.join(folder_paths.get_output_directory(), f"AniCrafter_{file_prefix}") #保存处理结果，便于下次调用，json目录，smplx_params，smplx_video.mp4,bkgd_video.mp4
+            os.makedirs(smplx_output_folder, exist_ok=True)
+
+            mask_save_path=os.path.join(smplx_output_folder, "mask_video.mp4")
+            if use_input_mask:
+                print("Using input mask")   
+            config_path=os.path.join(folder_paths.base_path,"custom_nodes/ComfyUI_AniCrafter/AniCrafter/engine/SegmentAPI/configs/sam2.1_hiera_l.yaml")       
+            mask_list=  use_input_mask if  use_input_mask else get_hunman_mask(image_list,config_path,mask_save_path,fps) # 
+            print("get mask done")
+            
+            smplx_mesh_pils_origin_,smplx_path=get_smplx_mesh(pose_estimate_path,image_list,mask_list,smplx_output_folder,fps)
+            print("get splx done")
+
+            smplx_mesh_pils_origin = crop_image(smplx_mesh_pils_origin_,max_frames)
+            save_path=os.path.join(smplx_output_folder, 'bkgd_video.mp4')
+            pretrain_model_url = 'https://github.com/sczhou/ProPainter/releases/download/v0.1.0/'
+            bkgd_video_list=InferencePropainter(pretrain_model_url,image_list,mask_list,mask_dilation= 16,ref_stride= 2,neighbor_length= 3,resize_ratio= 0.5,model_dir=os.path.join(folder_paths.models_dir, 'AniCrafter/pretrained_models/propainter'),save_path=save_path,save_fps=fps)
+
+            bkgd_pils_origin = crop_image(bkgd_video_list, max_frames)
+           
+            print('bkgd_pils is done')
+
+   
 
     character_image_path = os.path.join(folder_paths.get_input_directory(), f"AniCrafter_{file_prefix}.jpg")
     character_image.save(character_image_path)
@@ -366,8 +390,10 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
     #save_video_path = os.path.join(save_root, f'{os.path.basename(scene_path)}/{os.path.basename(character_image_path).split(".")[0]}.mp4')
     os.makedirs(os.path.dirname(save_gaussian_path), exist_ok=True)
 
-
-    gaussians_list, body_rgb_pil, crop_body_pil = HumanLRMInferrer_.infer(character_image_path, save_gaussian_path,gaussian_files,clear_cache)
+    HumanLRMInferrer_ = HumanLRMInferrer(base_dir)
+    HumanLRMInferrer_.load_model()
+    print('lhm_runner init')
+    gaussians_list, body_rgb_pil, crop_body_pil = HumanLRMInferrer_.infer(character_image_path, save_gaussian_path,gaussian_files,clear_cache) #TODO check reload
    
     print(f'gaussians_list: {len(gaussians_list)}')
     body_rgb_pil_pad = pad_image_to_aspect_ratio(crop_body_pil, W, H)
@@ -387,8 +413,10 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
         bkgd_nps.append(np.array(bkgd_pil))
 
 
+    SMPLX_MODEL=prepare_smplx_model(AniCrafter_weigths_path)
+    print('SMPLX_MODEL init')
+    
     blend_pils_origin = []
-
     for bkgd_pil, smplx_json_path in tqdm(zip(bkgd_pils_origin, smplx_json_paths), desc="Rendering Avatar", total=len(bkgd_pils_origin)):
 
         batch = {
@@ -422,6 +450,8 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
             'expr': batch['smplx_param']['expr'].unsqueeze(0), 
             'transform_mat_neutral_pose': transform_mat_neutral_pose, 
         }
+
+         
 
         gaussian_xyz, canonical_xyz, gaussian_rgb, gaussian_opacity, gaussian_rotation, canonical_rotation, gaussian_scaling, transform_matrix = \
             animate_gs_model(
@@ -470,10 +500,10 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
         blend_image = blend_image.resize((W, H), Image.Resampling.LANCZOS)
 
         blend_pils_origin.append(blend_image)
-    if  smplx_mesh_pils_origin_ is None:
-        smplx_mesh_pils_origin = video_to_pil_images(os.path.join(scene_path, 'smplx_video.mp4'), H, W,max_frames)
-    else:
-        smplx_mesh_pils_origin = crop_image(smplx_mesh_pils_origin_,max_frames)#TODO check if need maxframe
+    # if  smplx_mesh_pils_origin_ is None:
+    #     smplx_mesh_pils_origin = video_to_pil_images(os.path.join(scene_path, 'smplx_video.mp4'), H, W,max_frames)
+    # else:
+    #     smplx_mesh_pils_origin = crop_image(smplx_mesh_pils_origin_,max_frames)#TODO check if need maxframe
     ref_frame = body_rgb_pil_pad
     ref_frame_tensor = frame_process_norm(ref_frame).cuda()
 
@@ -484,13 +514,13 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
 
     ref_combine_blend_tensor = torch.cat([ref_frame_tensor.unsqueeze(1), blend_tensor[:, :-1]], dim=1)
     ref_combine_smplx_tensor = torch.cat([ref_frame_tensor.unsqueeze(1), smplx_tensor[:, :-1]], dim=1)
-    print(ref_combine_blend_tensor.shape, ref_combine_smplx_tensor.shape,ref_combine_blend_tensor.is_cuda, ref_combine_smplx_tensor.is_cuda,ref_combine_blend_tensor.dtype) #torch.Size([3, 81, 384, 384]) torch.Size([3, 81, 384, 384])
+    #print(ref_combine_blend_tensor.shape, ref_combine_smplx_tensor.shape,ref_combine_blend_tensor.is_cuda, ref_combine_smplx_tensor.is_cuda,ref_combine_blend_tensor.dtype) #torch.Size([3, 81, 384, 384]) torch.Size([3, 81, 384, 384])
     return ref_combine_blend_tensor,ref_combine_smplx_tensor,H, W
 
 
 
 
-def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,height,width,num_inference_steps,seed,use_teacache,cfg_value,use_tiled,text_emb,image_emb):
+def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,height,width,num_inference_steps,seed,use_teacache,cfg_value,use_tiled,text_emb,image_emb,use_mmgp):
     
     # H, W = 720, 1280
     # H, W = math.ceil(H / 16) * 16, math.ceil(W / 16) * 16
@@ -507,9 +537,9 @@ def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,hei
     # save_root = args.save_root
     
     #save_video_path = os.path.join(save_root, f'{os.path.basename(scene_path)}/{os.path.basename(character_image_path).split(".")[0]}.mp4')
-
-    from mmgp import offload, profile_type
-    offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.LowRAM_LowVRAM)
+    if use_mmgp:
+        from mmgp import offload, profile_type
+        offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.LowRAM_LowVRAM)
 
     # Image-to-video
     try: 

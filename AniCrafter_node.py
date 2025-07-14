@@ -6,7 +6,7 @@ import gc
 import numpy as np
 from torchvision.transforms import v2
 from .AniCrafter.diffsynth import ModelManager
-from .node_utils import gc_cleanup,tensor2pil_upscale,tensor2pil_list,find_gaussian_files,load_images
+from .node_utils import gc_cleanup,tensor2pil_upscale,tensor2pil_list,find_gaussian_files,load_images,find_directories
 #from .AniCrafter.run_pipeline_with_preprocess import prepare_models,predata_for_anicrafter,infer_anicrafter
 from .AniCrafter.run_pipeline import predata_for_anicrafter_dispre,prepare_models,infer_anicrafter
 import folder_paths
@@ -39,6 +39,7 @@ class AniCrafterPreImage:
     def INPUT_TYPES(s):
         return {
             "required": {
+               
                 "role_image": ("IMAGE",),
                 "clip_vision": (["none"] + folder_paths.get_filename_list("clip_vision"),),
                 "clean_up": ("BOOLEAN", {"default": True},),
@@ -71,6 +72,7 @@ class AniCrafterPreImage:
         print(clip_context.shape)#torch.Size([1, 257, 1280]) is_cuda True
         #print(clip_context.dtype)#torch.bfloat16
         #clip_context=clip_context.to(device)
+        
         return ({"clip_context":clip_context,"width":width,"height":height,"character_image":character_image,},)
     
 
@@ -125,7 +127,7 @@ class AniCrafterPreText:
             model_manager.clear_model_memory()
         print(prompt_emb_posi.shape,prompt_emb_nega.shape,prompt_emb_posi.is_cuda,prompt_emb_posi.dtype) #torch.Size([1, 512, 4096]) torch.Size([1, 512, 4096]) # True torch.float32
 
-
+       
         
         return ({"prompt_emb_posi": {"context": prompt_emb_posi}, "prompt_emb_nega": {"context": prompt_emb_nega}, },)
 
@@ -136,43 +138,71 @@ class AniCrafterPreVideo:
 
     @classmethod
     def INPUT_TYPES(s):
-        gaussian_files_list = ["none"] + find_gaussian_files(folder_paths.get_input_directory()) if find_gaussian_files(folder_paths.get_input_directory()) else [""]
+        gaussian_files_list = ["none"] + find_gaussian_files(folder_paths.get_input_directory()) if find_gaussian_files(folder_paths.get_input_directory()) else ["none"]
+        pre_video_dir_list = ["none"]+find_directories(folder_paths.get_output_directory()) if find_directories(folder_paths.get_output_directory()) else ["none"]
         return {
             "required": {
                 "image_data":("AniCrafter_DATA",),
                 "video_image": ("IMAGE",),
                 "gaussian_files": (gaussian_files_list,),
                 "max_frames": ("INT", {"default": 80, "min": 8, "max": 2048, "step": 4, "display": "number"}),
+                "fps": ("FLOAT", {"default": 24.0, "min": 5.0, "max": 120.0, "step": 1.0}),
                 "clean_up": ("BOOLEAN", {"default": True},),
-            }}
+                "preprocess_input": ("BOOLEAN", {"default": True},),
+                "pre_video_dir": (pre_video_dir_list,),
+            },
+             "optional": {
+                "video_mask": ("IMAGE",),  # [B,H,W,C], C=3,B>1
+            }
+            }
 
     RETURN_TYPES = ("AniCrafter_PREDATA",)
     RETURN_NAMES = ("data_dict", )
     FUNCTION = "sampler_main"
     CATEGORY = "AniCrafter"
 
-    def sampler_main(self, image_data,video_image,gaussian_files,max_frames,clean_up ):
+    def sampler_main(self, image_data,video_image,gaussian_files,max_frames,fps,clean_up,preprocess_input,pre_video_dir,**kwargs ):
         
+        input_mask=kwargs.get("video_mask")
         width=image_data.get("width")
         height=image_data.get("height")
         character_image=image_data.get("character_image")
         max_frames=max_frames + 1 #  must be 1 (mod 4)
-        image_list=tensor2pil_list(video_image,width,height)
+
+        if isinstance(input_mask, torch.Tensor):
+            use_input_mask=tensor2pil_list(input_mask,width,height)[:max_frames]
+            #print(f'use_input_mask: {len(use_input_mask)}')
+        else:
+            use_input_mask=None
         
+       
+        image_list=tensor2pil_list(video_image,width,height)[:max_frames]
+        #print("image_list",len(image_list))
+
+        if use_input_mask is not None:
+            if len(image_list) != len(use_input_mask):
+                min_frames=min(len(image_list),len(use_input_mask))
+                image_list=image_list[:min_frames]
+                use_input_mask=use_input_mask[:min_frames]
+                max_frames=min_frames
+
         frame_process_norm = v2.Compose([
         v2.Resize(size=(height, width), antialias=True),
         v2.ToTensor(),
         v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
          ])
-        
+        if pre_video_dir!="none":
+            pre_video_dir_=os.path.join(folder_paths.get_output_directory(),pre_video_dir)
+        else:
+            pre_video_dir_=pre_video_dir
         ref_combine_blend_tensor,ref_combine_smplx_tensor,height_, width_=predata_for_anicrafter_dispre(frame_process_norm,
-                                image_list,character_image,AniCrafter_weigths_path,gaussian_files,clean_up,smplx_mesh_pils_origin_=None,smplx_path_=None,bkgd_pils_origin_=None,max_frames= max_frames)
+                                image_list,character_image,AniCrafter_weigths_path,gaussian_files,clean_up,preprocess_input,pre_video_dir_,use_input_mask,fps,max_frames)
         image_data["ref_combine_blend_tensor"]=ref_combine_blend_tensor
         image_data["ref_combine_smplx_tensor"]=ref_combine_smplx_tensor
         image_data["width"]=width_
         image_data["height"]=height_
         image_data["max_frames"]=max_frames
-
+        image_data["fps"]=fps
         return (image_data,)
 
 class AniCrafterLoader:
@@ -234,9 +264,9 @@ class AniCrafterSampler:
                 "seed": ("INT", {"default": 0, "min": 0, "max": MAX_SEED}),
                 "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 2048, "step": 1, "display": "number"}),
                 "cfg_value": ("FLOAT", {"default": 1.5, "min": 0.1, "max": 20.0, "step": 0.1}),
-                "fps": ("FLOAT", {"default": 24.0, "min": 5.0, "max": 120.0, "step": 1.0}),
                 "use_teacache": ("BOOLEAN", {"default": True},),
                 "use_tiled": ("BOOLEAN", {"default": True},),
+                "use_mmgp": ("BOOLEAN", {"default": True},),
             }}
 
     RETURN_TYPES = ("IMAGE", "FLOAT")
@@ -244,17 +274,17 @@ class AniCrafterSampler:
     FUNCTION = "sampler_main"
     CATEGORY = "AniCrafter"
 
-    def sampler_main(self,text_emb, data_dict, model, seed, num_inference_steps,cfg_value, fps,use_teacache,use_tiled):
+    def sampler_main(self,text_emb, data_dict, model, seed, num_inference_steps,cfg_value, use_teacache,use_tiled,use_mmgp):
 
 
         print("***********Start infer  ***********")
 
         iamges = infer_anicrafter(model, data_dict.get("ref_combine_blend_tensor"),data_dict.get("ref_combine_smplx_tensor"),
                                  data_dict.get("height"),data_dict.get("width"),
-                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict, )
+                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict,use_mmgp )
         gc.collect()
         torch.cuda.empty_cache()
-        return (load_images(iamges), fps)
+        return (load_images(iamges), data_dict.get("fps"))
 
 
 NODE_CLASS_MAPPINGS = {

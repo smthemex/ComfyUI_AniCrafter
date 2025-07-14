@@ -8,8 +8,8 @@ import json_tricks as json
 import numpy as np
 from mmcv import Config, deprecated_api_warning
 
-from mmpose.core.evaluation.top_down_eval import keypoint_epe
-from mmpose.datasets.builder import DATASETS
+from ....core.evaluation.top_down_eval import keypoint_epe
+from ...builder import DATASETS
 from ..base import Kpt3dSviewRgbImgTopDownDataset
 
 

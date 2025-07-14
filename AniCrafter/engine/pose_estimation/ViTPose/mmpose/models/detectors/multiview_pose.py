@@ -4,8 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.runner import load_checkpoint
 
-from mmpose.core.camera import SimpleCameraTorch
-from mmpose.core.post_processing.post_transforms import (
+from ...core.camera import SimpleCameraTorch
+from ...core.post_processing.post_transforms import (
     affine_transform_torch, get_affine_transform)
 from .. import builder
 from ..builder import POSENETS

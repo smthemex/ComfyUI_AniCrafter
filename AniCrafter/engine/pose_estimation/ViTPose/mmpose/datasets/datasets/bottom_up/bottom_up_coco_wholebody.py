@@ -5,7 +5,7 @@ import numpy as np
 from mmcv import Config
 from xtcocotools.cocoeval import COCOeval
 
-from mmpose.datasets.builder import DATASETS
+from ...builder import DATASETS
 from .bottom_up_coco import BottomUpCocoDataset
 
 

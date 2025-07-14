@@ -21,6 +21,26 @@ def gc_cleanup():
     gc.collect()
     torch.cuda.empty_cache()
 
+def find_directories(base_path):
+    directories = []
+    for root, dirs, files in os.walk(base_path):
+        for name in dirs:
+            if  "AniCrafter_" not in name :
+                continue
+            dir_path = os.path.join(root, name)
+            # 检查 smplx_params 子目录是否存在
+            smplx_dir = os.path.join(dir_path, 'smplx_params')
+            if not os.path.isdir(smplx_dir):
+                continue
+            # 检查两个视频文件是否存在
+            has_bkgd = any(f.endswith('bkgd_video.mp4') for f in os.listdir(dir_path))
+            has_smplx = any(f.endswith('smplx_video.mp4') for f in os.listdir(dir_path))
+            
+            if has_bkgd and has_smplx:
+                directories.append(name)
+    return directories
+
+
 def find_gaussian_files(base_path):
     found_files = []
     for root, dirs, files in os.walk(base_path):

@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 import torch.nn as nn
 
 # from .utils import load_checkpoint
-from mmcv_custom.checkpoint import load_checkpoint
+from ....mmcv_custom.checkpoint import load_checkpoint
 
 class BaseBackbone(nn.Module, metaclass=ABCMeta):
     """Base backbone.

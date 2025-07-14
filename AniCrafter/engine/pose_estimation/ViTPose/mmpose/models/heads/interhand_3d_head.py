@@ -6,11 +6,11 @@ import torch.nn.functional as F
 from mmcv.cnn import (build_conv_layer, build_norm_layer, build_upsample_layer,
                       constant_init, normal_init)
 
-from mmpose.core.evaluation.top_down_eval import (
+from ...core.evaluation.top_down_eval import (
     keypoints_from_heatmaps3d, multilabel_classification_accuracy)
-from mmpose.core.post_processing import flip_back
-from mmpose.models.builder import build_loss
-from mmpose.models.necks import GlobalAveragePooling
+from ...core.post_processing import flip_back
+from ...models.builder import build_loss
+from ...models.necks import GlobalAveragePooling
 from ..builder import HEADS
 
 

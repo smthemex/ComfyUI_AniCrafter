@@ -12,7 +12,7 @@ try:
 except ImportError:
     warnings.warn('auto_fp16 from mmpose will be deprecated from v0.15.0'
                   'Please install mmcv>=1.1.4')
-    from mmpose.core import auto_fp16
+    from ...core import auto_fp16
 
 
 @POSENETS.register_module()

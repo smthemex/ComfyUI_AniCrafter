@@ -4,7 +4,7 @@ from abc import ABCMeta
 import numpy as np
 from torch.utils.data import ConcatDataset, Dataset, WeightedRandomSampler
 
-from mmpose.datasets.builder import DATASETS
+from ...builder import DATASETS
 from .mesh_base_dataset import MeshBaseDataset
 
 

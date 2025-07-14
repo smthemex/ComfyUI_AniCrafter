@@ -8,7 +8,7 @@ import json_tricks as json
 import numpy as np
 from mmcv import Config, deprecated_api_warning
 
-from mmpose.core.evaluation.top_down_eval import keypoint_pck_accuracy
+from ....core.evaluation.top_down_eval import keypoint_pck_accuracy
 from ...builder import DATASETS
 from .topdown_coco_dataset import TopDownCocoDataset
 

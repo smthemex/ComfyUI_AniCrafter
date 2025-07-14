@@ -218,7 +218,7 @@ class SMPLifyLoss(torch.nn.Module):
                 out, [poses, params[2], params[3]], input_keypoints, bbox
             )
             loss = sum(loss_dict.values())
-            loss.backward()
+            #loss.backward() #TODO
 
             return loss
 
@@ -348,8 +348,7 @@ class TemporalSMPLify:
         for j in (j_bar := tqdm(range(30))):
             loss = first_step_loss(params[0], params[3], j3d, k2d_orient_fitting, bbox)
             optimizer.zero_grad()
-
-            loss.backward()
+            #loss.backward()
             optimizer.step()
             msg = f"Loss: {loss.item():.1f}"
             j_bar.set_postfix_str(msg)
