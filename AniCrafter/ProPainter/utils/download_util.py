@@ -93,6 +93,7 @@ def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
         str: The path to the downloaded file.
     """
     if model_dir is None:  # use the pytorch hub_dir
+        
         hub_dir = get_dir()
         model_dir = os.path.join(hub_dir, 'checkpoints')
 

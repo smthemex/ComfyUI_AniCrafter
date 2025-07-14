@@ -4,10 +4,10 @@ import torch.nn as nn
 from mmcv.cnn import (build_conv_layer, build_norm_layer, build_upsample_layer,
                       constant_init, normal_init)
 
-from mmpose.core.evaluation import pose_pck_accuracy
-from mmpose.core.post_processing import flip_back
-from mmpose.models.builder import build_loss
-from mmpose.models.utils.ops import resize
+from ...core.evaluation import pose_pck_accuracy
+from ...core.post_processing import flip_back
+from ...models.builder import build_loss
+from ...models.utils.ops import resize
 from ..builder import HEADS
 import torch.nn.functional as F
 from .topdown_heatmap_base_head import TopdownHeatmapBaseHead

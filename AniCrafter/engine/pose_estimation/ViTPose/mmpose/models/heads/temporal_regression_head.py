@@ -4,9 +4,9 @@ import torch.nn as nn
 from mmcv.cnn import build_conv_layer, constant_init, kaiming_init
 from mmcv.utils.parrots_wrapper import _BatchNorm
 
-from mmpose.core import (WeightNormClipHook, compute_similarity_transform,
+from ...core import (WeightNormClipHook, compute_similarity_transform,
                          fliplr_regression)
-from mmpose.models.builder import HEADS, build_loss
+from ...models.builder import HEADS, build_loss
 
 
 @HEADS.register_module()

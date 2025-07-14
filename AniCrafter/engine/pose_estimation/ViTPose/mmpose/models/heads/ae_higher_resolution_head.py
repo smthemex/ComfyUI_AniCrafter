@@ -4,7 +4,7 @@ import torch.nn as nn
 from mmcv.cnn import (build_conv_layer, build_upsample_layer, constant_init,
                       normal_init)
 
-from mmpose.models.builder import build_loss
+from ...models.builder import build_loss
 from ..backbones.resnet import BasicBlock
 from ..builder import HEADS
 

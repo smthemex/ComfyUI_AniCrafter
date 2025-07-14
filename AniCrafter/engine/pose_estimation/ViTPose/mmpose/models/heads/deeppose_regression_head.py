@@ -3,10 +3,10 @@ import numpy as np
 import torch.nn as nn
 from mmcv.cnn import normal_init
 
-from mmpose.core.evaluation import (keypoint_pck_accuracy,
+from ...core.evaluation import (keypoint_pck_accuracy,
                                     keypoints_from_regression)
-from mmpose.core.post_processing import fliplr_regression
-from mmpose.models.builder import HEADS, build_loss
+from ...core.post_processing import fliplr_regression
+from ...models.builder import HEADS, build_loss
 
 
 @HEADS.register_module()

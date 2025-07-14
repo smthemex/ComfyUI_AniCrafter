@@ -15,18 +15,19 @@ from ..ViTPose.mmpose.apis import get_track_id, init_pose_model, vis_pose_result
 from ..ViTPose.mmpose.apis.inference import batch_inference_pose_model
 from ultralytics import YOLO
 
-ROOT_DIR = osp.abspath(f"{__file__}/../../")
-VIT_DIR = osp.join(ROOT_DIR, "ViTPose")
+# ROOT_DIR = osp.abspath(f"{__file__}/../../")
+# VIT_DIR = osp.join(ROOT_DIR, "ViTPose")
 
 VIS_THRESH = 0.5
 BBOX_CONF = 0.5
 TRACKING_THR = 0.1
 MINIMUM_FRMAES = 15
 MINIMUM_JOINTS = 6
-
+import folder_paths
 
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
+VIT_DIR=os.path.join(folder_paths.base_path, 'custom_nodes/ComfyUI_AniCrafter/AniCrafter/engine/pose_estimation/ViTPose')
 
 
 

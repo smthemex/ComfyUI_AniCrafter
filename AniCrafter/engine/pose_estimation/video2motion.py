@@ -10,8 +10,8 @@ import os
 import sys
 from omegaconf import OmegaConf
 
-current_dir_path = os.path.dirname(__file__)
-sys.path.append(current_dir_path + "/../pose_estimation")
+# current_dir_path = os.path.dirname(__file__)
+# sys.path.append(current_dir_path + "/../pose_estimation")
 import argparse
 import copy
 import gc
@@ -205,34 +205,67 @@ def load_video(video_path, pad_ratio):
 
 
 def pre_pil_mask(all_images, pad_ratio,all_masks=None):
-    fps = 30
+    #fps = 30
     #all_images = video_to_pil_images(video_path)
-
+    # for i, image in enumerate(all_images):
+    #     image.save(f'{i}_.png')
     if all_masks is None:
         print('error in reading masks, using frames only')
         use_mask = False
+        
     else:
         use_mask = True
-        
+        processed_masks = []
+        for i, mask in enumerate(all_masks):
+            if isinstance(mask, np.ndarray):
+                # 将numpy数组转换为灰度图
+                if mask.ndim == 2:  # [H, W]
+                    pass  # 已经是灰度图，无需转换
+                elif mask.ndim == 3 and mask.shape[2] == 1:  # [H, W, 1]
+                    mask = mask.squeeze(-1)  # 去除多余维度
+                elif mask.ndim == 3 and mask.shape[2] in [3, 4]:  # [H, W, 3] 或 [H, W, 4]
+                    if mask.dtype == np.uint8:
+                        # 使用OpenCV的颜色空间转换函数将图像转换为灰度图
+                        mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY if mask.shape[2] == 3 else cv2.COLOR_RGBA2GRAY)
+                    else:
+                        # 非uint8类型，先转换为uint8再处理
+                        mask = (mask * 255).astype(np.uint8)
+                        mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY if mask.shape[2] == 3 else cv2.COLOR_RGBA2GRAY)
+                else:
+                    raise ValueError(f"Unsupported mask shape: {mask.shape}")
+            elif isinstance(mask, Image.Image):
+                # 确保PIL图像是灰度图
+                if mask.mode != 'L':
+                    mask = mask.convert('L')
+                mask = np.array(mask)  # 转换为numpy数组
+            else:
+                raise TypeError(f"Unsupported mask type: {type(mask)}")
+            processed_masks.append(mask)
+
     frames = []
     for idx, img in enumerate(all_images):
         frame = cv2.cvtColor(np.array(all_images[idx]), cv2.COLOR_BGR2RGB)
         if use_mask:
-            mask = np.array(all_masks[idx]) / 255.
-            bbox = get_bbox(mask[:, :, 0])
+            mask = np.array(processed_masks[idx], dtype=np.float32) / 255.
+            bbox = get_bbox(mask)
             bbox_list = bbox.get_box()
             mask[bbox_list[1] : bbox_list[3], bbox_list[0] : bbox_list[2]] = 1
+            mask = np.expand_dims(mask, axis=-1)
             frame = np.uint8(frame * mask)
+            # mask = np.array(processed_masks[idx]) / 255.
+            # bbox = get_bbox(mask[:, :, 0])
+            # bbox_list = bbox.get_box()
+            # mask[bbox_list[1] : bbox_list[3], bbox_list[0] : bbox_list[2]] = 1
+            # frame = np.uint8(frame * mask)
         # since the tracker and detector receive BGR images as inputs
-        # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if pad_ratio > 0:
             frame, offset_w, offset_h = img_center_padding(frame, pad_ratio)
         else:
             offset_w, offset_h = 0, 0
         frames.append(frame)
-    height, weight, _ = frames[0].shape
-    return frames, height, weight, fps, offset_w, offset_h, all_images
-
+    height, width, _ = frames[0].shape
+    return frames, height, width,  offset_w, offset_h, all_images
 
 
 
@@ -460,13 +493,14 @@ class Video2MotionPipeline:
         visualize=True,
         pad_ratio=0.,
         fov=60,
+        fps=30,
     ):
         self.device = device
-        self.visualize = True
+        self.visualize = visualize
         self.kp_mode = kp_mode
         self.pad_ratio = pad_ratio
         self.fov = fov
-        self.fps = None
+        self.fps = fps
         self.pose_model, self.keypoint_detector, self.smplx_model = load_models(
             model_path, self.device
         )
@@ -561,7 +595,7 @@ class Video2MotionPipeline:
                 data_chunk["keypoints_2d"][i, :2] = one_euro.filter(
                     data_chunk["keypoints_2d"][i, :2]
                 )
-
+    
             poses, betas, transl = self.smplify.fit(
                 data_chunk["rotvec"],
                 data_chunk["beta"],
@@ -666,17 +700,22 @@ class Video2MotionPipeline:
             with open(os.path.join(out_path, f"{(i+1):05}.json"), "w") as fp:
                 json.dump(smplx_param, fp)
 
-    def __call__(self, iamge_list, all_masks,output_path ):
+    def __call__(self, iamge_list, all_masks,output_path,fps ):
         #start = time.time()
         # all_frames, raw_H, raw_W, fps, offset_w, offset_h, fname_list = load_video(
         #     video_path, pad_ratio=self.pad_ratio
         # )
-        all_frames, raw_H, raw_W, fps, offset_w, offset_h, fname_list = pre_pil_mask(
+        all_frames, raw_H, raw_W,  offset_w, offset_h, fname_list = pre_pil_mask(
             iamge_list, pad_ratio=self.pad_ratio, all_masks=all_masks
         )
+        # for i,img in enumerate(all_frames):
+        #     float_rgb_image = Image.fromarray(img)
+        #     float_rgb_image.save(f"f{i}.jpg")
+
+
         raw_H, raw_W = all_frames[0].shape[:2]
 
-        self.fps = fps #这里fps被设置为30，需要检查
+        self.fps = fps #外置视频的fps
         video_length = len(all_frames)
 
         raw_K = get_camera_parameters(
@@ -706,7 +745,8 @@ class Video2MotionPipeline:
 
         smplx_mesh_pils = [Image.fromarray(x) for x in all_SMPLX_mesh_frames]
 
-        #save_video(smplx_mesh_pils, smplx_mesh_output_path, fps=15, quality=7)
+        # 保存处理视频，开源下次调用
+        save_video(smplx_mesh_pils, os.path.join(output_path,"smplx_video.mp4"), fps=fps, quality=7)
 
         if self.visualize:
             self.save_video(
@@ -761,7 +801,7 @@ def make_dataset(dir, target_camera_list):
 
 
 
-def get_smplx_mesh(model_path,output_path,video_path,smplx_mesh_output_path):
+def get_smplx_mesh(model_path,image_list,mask_list,smplx_mesh_output_path,fps):
     # assert (
     #     torch.cuda.is_available()
     # ), "CUDA is not available, please check your environment"
@@ -788,18 +828,10 @@ def get_smplx_mesh(model_path,output_path,video_path,smplx_mesh_output_path):
         visualize=opt.visualize,
         pad_ratio=0.,
         fov=FOV,
+        fps=fps,
     )
 
 
-    #output_path = os.path.splitext(video_path.replace(opt.root, opt.save_root))[0]
-    #smplx_mesh_output_path = video_path.replace(opt.root, opt.save_mesh_root)
-
-    print(f"Processing video: {video_path} -> {output_path}")
-
-
-
-    os.makedirs(output_path, exist_ok=True)
-    os.makedirs(os.path.dirname(smplx_mesh_output_path), exist_ok=True)
-    smplx_mesh_pils,smplx_path=pipeline(video_path, output_path, smplx_mesh_output_path)
+    smplx_mesh_pils,smplx_path=pipeline(image_list, mask_list, smplx_mesh_output_path,fps)
     return smplx_mesh_pils,smplx_path
     # assert False

@@ -7,7 +7,7 @@ from collections import OrderedDict
 import numpy as np
 from mmcv import Config, deprecated_api_warning
 
-from mmpose.datasets.builder import DATASETS
+from ...builder import DATASETS
 from ..base import Kpt2dSviewRgbImgTopDownDataset
 
 

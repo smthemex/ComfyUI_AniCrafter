@@ -13,7 +13,7 @@ from mmcv.cnn import (ConvModule, DepthwiseSeparableConvModule,
                       normal_init)
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmpose.utils import get_root_logger
+from ...utils import get_root_logger
 from ..builder import BACKBONES
 from .utils import channel_shuffle, load_checkpoint
 

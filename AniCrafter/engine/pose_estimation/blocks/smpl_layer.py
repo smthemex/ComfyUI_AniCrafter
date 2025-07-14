@@ -4,11 +4,11 @@
 
 from .. import pose_utils 
 import roma
-from ....LHM.models.rendering.smplx import smplx
+import smplx
 import torch
 from ..pose_utils import inverse_perspective_projection, perspective_projection
 from ..pose_utils.rot6d import rotation_6d_to_matrix
-from ....LHM.models.rendering.smplx.smplx.lbs import vertices2joints
+from smplx.lbs import vertices2joints
 from torch import nn
 
 
@@ -46,16 +46,6 @@ class SMPL_Layer(nn.Module):
 
         # Primary keypoint - root
         self.joint_names = eval(f"pose_utils.get_{self.type}_joint_names")()
-        # 获取关节名称
-        # 修改此处，避免使用 eval
-        # method_name = f"get_{self.type}_joint_names"
-        # if hasattr(pose_utils, method_name):
-        #     get_joint_names_func = getattr(pose_utils, method_name)
-        #     self.joint_names = get_joint_names_func()
-        # else:
-        #     raise AttributeError(f"pose_utils 模块中没有 {method_name} 方法")
-
-
         self.person_center = person_center
         self.person_center_idx = None
         if self.person_center is not None:
@@ -118,6 +108,7 @@ class SMPL_Layer(nn.Module):
         kwargs_pose = {
             "betas": shape,
         }
+        
         kwargs_pose["global_orient"] = self.bm_x.global_orient.repeat(bs, 1)
         kwargs_pose["body_pose"] = pose[:, 1:22].flatten(1)
         kwargs_pose["left_hand_pose"] = pose[:, 22:37].flatten(1)

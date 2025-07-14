@@ -6,7 +6,7 @@ from abc import ABCMeta
 import numpy as np
 from torch.utils.data import Dataset
 
-from mmpose.datasets.pipelines import Compose
+from ...pipelines import Compose
 
 
 class MeshBaseDataset(Dataset, metaclass=ABCMeta):

@@ -8,7 +8,7 @@ from mmcv.cnn import (ConvModule, MaxPool2d, constant_init, kaiming_init,
                       normal_init)
 from mmcv.runner.checkpoint import load_state_dict
 
-from mmpose.utils import get_root_logger
+from  ...utils import get_root_logger
 from ..builder import BACKBONES
 from .base_backbone import BaseBackbone
 from .resnet import Bottleneck as _Bottleneck

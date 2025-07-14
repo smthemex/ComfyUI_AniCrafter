@@ -2643,7 +2643,7 @@ def create(
         ValueError: In case the model type is not one of SMPL, SMPLH,
         SMPLX, MANO or FLAME
     """
-    #print(model_type,model_path) smplx F:\ComfyUI311\ComfyUI\models\AniCrafter\pretrained_models/human_model_files
+    print(model_type,model_path) #smplx F:\ComfyUI311\ComfyUI\models\AniCrafter\pretrained_models/human_model_files
     # If it's a folder, assume
     if osp.isdir(model_path):
         model_path = os.path.join(model_path, model_type)

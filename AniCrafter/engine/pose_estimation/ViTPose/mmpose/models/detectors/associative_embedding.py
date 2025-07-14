@@ -7,11 +7,11 @@ from mmcv.image import imwrite
 from mmcv.utils.misc import deprecated_api_warning
 from mmcv.visualization.image import imshow
 
-from mmpose.core.evaluation import (aggregate_scale, aggregate_stage_flip,
+from ...core.evaluation import (aggregate_scale, aggregate_stage_flip,
                                     flip_feature_maps, get_group_preds,
                                     split_ae_outputs)
-from mmpose.core.post_processing.group import HeatmapParser
-from mmpose.core.visualization import imshow_keypoints
+from ...core.post_processing.group import HeatmapParser
+from ...core.visualization import imshow_keypoints
 from .. import builder
 from ..builder import POSENETS
 from .base import BasePose
@@ -21,7 +21,7 @@ try:
 except ImportError:
     warnings.warn('auto_fp16 from mmpose will be deprecated from v0.15.0'
                   'Please install mmcv>=1.1.4')
-    from mmpose.core import auto_fp16
+    from ...core import auto_fp16
 
 
 @POSENETS.register_module()

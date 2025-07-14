@@ -60,10 +60,11 @@ def cleanup():
 
 
 
-def get_hunman_mask(image_list,):
+def get_hunman_mask(image_list,config_path,save_path,fps):
 
     
-    parsingnet = SAM2Seg()
+    #parsingnet = SAM2Seg()
+    parsingnet = SAM2Seg(config=config_path)
 
     masks = []
     
@@ -72,6 +73,9 @@ def get_hunman_mask(image_list,):
         alpha = Image.fromarray((parsing_out.masks * 255).astype(np.uint8))
         masks.append(alpha)
 
-    #save_video(masks, save_path, fps=15, quality=9)
+    save_video(masks, save_path, fps, quality=9)
+    parsingnet.tocpu()
+    del parsingnet
+    torch.cuda.empty_cache()
     return masks
     # assert False

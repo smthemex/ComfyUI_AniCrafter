@@ -5,9 +5,9 @@
 import os
 import sys
 
-sys.path.append("./")
-sys.path.append("./engine")
-sys.path.append("./engine/pose_estimation")
+# sys.path.append("./")
+# sys.path.append("./engine")
+# sys.path.append("./engine/pose_estimation")
 import copy
 
 import einops

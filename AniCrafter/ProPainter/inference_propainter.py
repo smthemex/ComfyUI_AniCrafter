@@ -2,7 +2,7 @@
 import os
 import cv2
 # import argparse
-# import imageio
+import imageio
 import numpy as np
 import scipy.ndimage
 from PIL import Image
@@ -195,7 +195,7 @@ def cleanup():
 
 
 
-def InferencePropainter(pretrain_model_url,gt_list,mask_list,mask_dilation,ref_stride,neighbor_length,resize_ratio):
+def InferencePropainter(pretrain_model_url,gt_list,mask_list,mask_dilation,ref_stride,neighbor_length,resize_ratio,model_dir,save_path,save_fps=24):
     args_dict={
             "mask": "./mask.mp4",
             "video": "./video.mp4",
@@ -211,7 +211,7 @@ def InferencePropainter(pretrain_model_url,gt_list,mask_list,mask_dilation,ref_s
             "mode": "video_inpainting", #['video_inpainting', 'video_outpainting']
             "scale_h": 1.0,
             "scale_w": 1.2,
-            "save_fps": 24,
+            "save_fps": save_fps,
             "save_frames": False,
             "fp16": False, # need check
             "data_root":"",
@@ -233,11 +233,11 @@ def InferencePropainter(pretrain_model_url,gt_list,mask_list,mask_dilation,ref_s
     # set up RAFT and flow competition model
     ##############################################
     ckpt_path = load_file_from_url(url=os.path.join(pretrain_model_url, 'raft-things.pth'), 
-                                    model_dir='weights', progress=True, file_name=None)
+                                    model_dir=model_dir, progress=True, file_name=None)
     fix_raft = RAFT_bi(ckpt_path, device)
     
     ckpt_path = load_file_from_url(url=os.path.join(pretrain_model_url, 'recurrent_flow_completion.pth'), 
-                                    model_dir='weights', progress=True, file_name=None)
+                                    model_dir=model_dir, progress=True, file_name=None)
     fix_flow_complete = RecurrentFlowCompleteNet(ckpt_path)
     for p in fix_flow_complete.parameters():
         p.requires_grad = False
@@ -249,7 +249,7 @@ def InferencePropainter(pretrain_model_url,gt_list,mask_list,mask_dilation,ref_s
     # set up ProPainter model
     ##############################################
     ckpt_path = load_file_from_url(url=os.path.join(pretrain_model_url, 'ProPainter.pth'), 
-                                    model_dir='weights', progress=True, file_name=None)
+                                    model_dir=model_dir, progress=True, file_name=None)
     model = InpaintGenerator(model_path=ckpt_path).to(device)
     model.eval()
 
@@ -264,7 +264,7 @@ def InferencePropainter(pretrain_model_url,gt_list,mask_list,mask_dilation,ref_s
 
 
     #save_path = gt_video.replace(args.data_root, args.save_root)
-   # os.makedirs(os.path.dirname(save_path), exist_ok=True)
+   # 
 
     start_time = time.time()
 
@@ -480,17 +480,82 @@ def InferencePropainter(pretrain_model_url,gt_list,mask_list,mask_dilation,ref_s
         torch.cuda.empty_cache()
     
 
+    save_video_with_retry(save_path, comp_frames, save_fps, out_size)
+    # os.makedirs(save_path, exist_ok=True)
+    # writer = imageio.get_writer(save_path, fps=save_fps, quality=5)
+    # # # save each frame
+    # # for idx in range(video_length):
+    # #     f = comp_frames[idx]
+    # #     f = cv2.resize(f, out_size, interpolation = cv2.INTER_CUBIC)
+    # #     # f = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
+    # #     writer.append_data(f)
+    # # writer.close()
+    # import cv2
+    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    # height, width = frames[0].shape[:2]
+    # writer = cv2.VideoWriter(save_path, fourcc, save_fps, (width, height))
+    
+    # for frame in frames:
+    #     # 转换颜色空间 RGB->BGR
+    #     writer.write(frame[:, :, ::-1])
+    
+    # writer.release()
+    frames_pil=[]
+    for frame in comp_frames:
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(frame_rgb)
+        frames_pil.append(pil_image)
 
-    # writer = imageio.get_writer(save_path, fps=fps, quality=5)
-    # # save each frame
-    # for idx in range(video_length):
-    #     f = comp_frames[idx]
-    #     f = cv2.resize(f, out_size, interpolation = cv2.INTER_CUBIC)
-    #     # f = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
-    #     writer.append_data(f)
-    # writer.close()
 
 
     print(time.time() - start_time)
-    return comp_frames
+    fix_flow_complete.to("cpu")
+    model.to("cpu")
+    del fix_flow_complete,model
+    torch.cuda.empty_cache()
+    return frames_pil
 
+
+# 修改后的视频写入代码
+def save_video_with_retry(save_path, frames, fps, out_size):
+    # 确保目录存在
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    
+    # 尝试删除已存在的文件（如果被锁定）
+    if os.path.exists(save_path):
+        try:
+            os.remove(save_path)
+        except PermissionError:
+            # 创建唯一文件名避免冲突
+            timestamp = int(time.time())
+            base, ext = os.path.splitext(save_path)
+            save_path = f"{base}_{timestamp}{ext}"
+    
+    # 使用OpenCV写入（更可靠）
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    height, width = out_size[1], out_size[0]
+    
+    # 确保尺寸正确
+    if frames[0].shape[:2] != (height, width):
+        frames = [cv2.resize(f, (width, height)) for f in frames]
+    
+    # 检查颜色空间并转换
+    if frames[0].shape[2] == 3:  # 假设是RGB格式
+        frames = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in frames]
+    
+    writer = cv2.VideoWriter(save_path, fourcc, fps, (width, height))
+    if not writer.isOpened():
+        # 备选方案：使用imageio
+        try:
+            with imageio.get_writer(save_path, fps=fps) as writer:
+                for frame in frames:
+                    writer.append_data(frame)
+            return
+        except Exception as e:
+            print(f"两种视频写入方式均失败: {e}")
+            return
+    
+    for frame in frames:
+        writer.write(frame)
+    
+    writer.release()

@@ -4,8 +4,8 @@ import mmcv
 import numpy as np
 import torch
 
-from mmpose.core.visualization.image import imshow_mesh_3d
-from mmpose.models.misc.discriminator import SMPLDiscriminator
+from ...core.visualization.image import imshow_mesh_3d
+from ...models.misc.discriminator import SMPLDiscriminator
 from .. import builder
 from ..builder import POSENETS
 from .base import BasePose

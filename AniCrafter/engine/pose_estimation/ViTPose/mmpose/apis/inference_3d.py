@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from mmcv.parallel import collate, scatter
 
-from mmpose.datasets.pipelines import Compose
+from ..datasets.pipelines import Compose
 from .inference import _box2cs, _xywh2xyxy, _xyxy2xywh
 
 

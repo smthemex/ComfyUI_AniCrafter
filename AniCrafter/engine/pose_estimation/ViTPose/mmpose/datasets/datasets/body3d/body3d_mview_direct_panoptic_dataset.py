@@ -12,9 +12,9 @@ import mmcv
 import numpy as np
 from mmcv import Config, deprecated_api_warning
 
-from mmpose.core.camera import SimpleCamera
-from mmpose.datasets.builder import DATASETS
-from mmpose.datasets.datasets.base import Kpt3dMviewRgbImgDirectDataset
+from ....core.camera import SimpleCamera
+from ...builder import DATASETS
+from ..base import Kpt3dMviewRgbImgDirectDataset
 
 
 @DATASETS.register_module()
