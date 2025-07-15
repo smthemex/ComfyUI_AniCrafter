@@ -678,6 +678,9 @@ class SMPLXVoxelMeshModel(nn.Module):
 
         template_verts = mesh_neutral_pose_wo_upsample.squeeze(0)
 
+        #device = template_verts.device
+
+
         def scale_voxel_size(template_verts, scale_ratio=1.0):
             min_values, _ = torch.min(template_verts, dim=0)
             max_values, _ = torch.max(template_verts, dim=0)
@@ -693,6 +696,9 @@ class SMPLXVoxelMeshModel(nn.Module):
             return torch.cat([bottom[:, None], upper[:, None]], dim=1)
 
         mini_size_bbox = scale_voxel_size(template_verts, scale_ratio)
+
+        #mini_size_bbox = mini_size_bbox.to(device) # need cheeck
+
         z_voxel_size = voxel_size // 2
 
         # build coordinate
@@ -704,6 +710,8 @@ class SMPLXVoxelMeshModel(nn.Module):
 
         x, y, z = np.meshgrid(x_range, y_range, z_range, indexing="ij")
         coordinates = torch.from_numpy(np.stack([x, y, z], axis=-1))
+
+        coordinates = coordinates.float().to(mini_size_bbox.device) # need cheeck
 
         coordinates[..., 0] = mini_size_bbox[0, 0] + coordinates[..., 0] * (
             mini_size_bbox[0, 1] - mini_size_bbox[0, 0]
