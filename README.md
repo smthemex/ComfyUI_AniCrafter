@@ -21,7 +21,7 @@ pip install -r requirements.txt
 ```
 and 
 ```
-
+pip install mmcv_full-1.7.2
 pip install flash-attn --no-build-isolation
 pip install tb-nightly
 pip install git+https://github.com/XPixelGroup/BasicSR
