@@ -6,7 +6,7 @@ import gc
 import numpy as np
 from torchvision.transforms import v2
 from .AniCrafter.diffsynth import ModelManager
-from .node_utils import gc_cleanup,tensor2pil_upscale,tensor2pil_list,find_gaussian_files,load_images,find_directories
+from .node_utils import gc_cleanup,tensor2pil_upscale,tensor2pil_list,find_gaussian_files,load_images,find_directories,tensor_to_pil
 #from .AniCrafter.run_pipeline_with_preprocess import prepare_models,predata_for_anicrafter,infer_anicrafter
 from .AniCrafter.run_pipeline import predata_for_anicrafter_dispre,prepare_models,infer_anicrafter
 import folder_paths
@@ -43,8 +43,7 @@ class AniCrafterPreImage:
                 "role_image": ("IMAGE",),
                 "clip_vision": (["none"] + folder_paths.get_filename_list("clip_vision"),),
                 "clean_up": ("BOOLEAN", {"default": True},),
-                "width": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 16, "display": "number"}),
-                "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 16, "display": "number"}),
+                
             }}
 
     RETURN_TYPES = ("AniCrafter_DATA",)
@@ -52,7 +51,7 @@ class AniCrafterPreImage:
     FUNCTION = "sampler_main"
     CATEGORY = "AniCrafter"
 
-    def sampler_main(self, role_image,clip_vision,clean_up,width,height ):
+    def sampler_main(self, role_image,clip_vision,clean_up):
         if clip_vision == "none":
            raise ValueError("Please select a CLIP model")
         else:
@@ -61,7 +60,7 @@ class AniCrafterPreImage:
         model_manager = ModelManager(device="cpu")
         model_manager.load_models([clip_vision_path],torch_dtype=torch.bfloat16,) # Image Encoder is loaded with float32)  #
         image_encoder = model_manager.fetch_model("wan_video_image_encoder")
-        character_image=tensor2pil_upscale(role_image, width, height)
+        character_image=tensor_to_pil(role_image)
         image = torch.Tensor(np.array(character_image, dtype=np.float32) * (2 / 255) - 1).permute(2, 0, 1).unsqueeze(0).to(device)
         image_encoder.to(device)
         clip_context = image_encoder.encode_image([image])
@@ -73,7 +72,7 @@ class AniCrafterPreImage:
         #print(clip_context.dtype)#torch.bfloat16
         #clip_context=clip_context.to(device)
         
-        return ({"clip_context":clip_context,"width":width,"height":height,"character_image":character_image,},)
+        return ({"clip_context":clip_context,"character_image":character_image,},)
     
 
 class AniCrafterPreText:
@@ -145,6 +144,8 @@ class AniCrafterPreVideo:
                 "image_data":("AniCrafter_DATA",),
                 "video_image": ("IMAGE",),
                 "gaussian_files": (gaussian_files_list,),
+                "width": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 16, "display": "number"}),
+                "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 16, "display": "number"}),
                 "max_frames": ("INT", {"default": 80, "min": 8, "max": 2048, "step": 4, "display": "number"}),
                 "fps": ("FLOAT", {"default": 24.0, "min": 5.0, "max": 120.0, "step": 1.0}),
                 "clean_up": ("BOOLEAN", {"default": True},),
@@ -161,11 +162,9 @@ class AniCrafterPreVideo:
     FUNCTION = "sampler_main"
     CATEGORY = "AniCrafter"
 
-    def sampler_main(self, image_data,video_image,gaussian_files,max_frames,fps,clean_up,preprocess_input,pre_video_dir,**kwargs ):
+    def sampler_main(self, image_data,video_image,gaussian_files,width,height ,max_frames,fps,clean_up,preprocess_input,pre_video_dir,**kwargs ):
         
         input_mask=kwargs.get("video_mask")
-        width=image_data.get("width")
-        height=image_data.get("height")
         character_image=image_data.get("character_image")
         max_frames=max_frames + 1 #  must be 1 (mod 4)
 
@@ -216,6 +215,7 @@ class AniCrafterLoader:
                 "dit": (["none"] + folder_paths.get_filename_list("diffusion_models"),),
                 "vae": (["none"] + folder_paths.get_filename_list("vae"),),
                 "lora_alpha":("FLOAT", {"default": 1.0, "min": 0.1, "max": 1.0, "step": 0.1}),
+                "use_mmgp": ("BOOLEAN", {"default": True},),
             },
         }
 
@@ -224,7 +224,7 @@ class AniCrafterLoader:
     FUNCTION = "loader_main"
     CATEGORY = "AniCrafter"
 
-    def loader_main(self,dit,vae,lora_alpha):
+    def loader_main(self,dit,vae,lora_alpha,use_mmgp):
 
         if dit == "none":
             raise ValueError("Please select a DIT model")
@@ -241,8 +241,9 @@ class AniCrafterLoader:
         print("***********Load model ***********")
 
         pipe = prepare_models(dit_path,vae_path, os.path.join(AniCrafter_weigths_path, "pretrained_models/anicrafter"),lora_alpha)
-
-
+        if use_mmgp:
+            from mmgp import offload, profile_type
+            offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.LowRAM_LowVRAM)
         print("***********Load model done ***********")
 
         gc_cleanup()
@@ -266,7 +267,6 @@ class AniCrafterSampler:
                 "cfg_value": ("FLOAT", {"default": 1.5, "min": 0.1, "max": 20.0, "step": 0.1}),
                 "use_teacache": ("BOOLEAN", {"default": True},),
                 "use_tiled": ("BOOLEAN", {"default": True},),
-                "use_mmgp": ("BOOLEAN", {"default": True},),
             }}
 
     RETURN_TYPES = ("IMAGE", "FLOAT")
@@ -274,14 +274,14 @@ class AniCrafterSampler:
     FUNCTION = "sampler_main"
     CATEGORY = "AniCrafter"
 
-    def sampler_main(self,text_emb, data_dict, model, seed, num_inference_steps,cfg_value, use_teacache,use_tiled,use_mmgp):
+    def sampler_main(self,text_emb, data_dict, model, seed, num_inference_steps,cfg_value, use_teacache,use_tiled,):
 
 
         print("***********Start infer  ***********")
 
         iamges = infer_anicrafter(model, data_dict.get("ref_combine_blend_tensor"),data_dict.get("ref_combine_smplx_tensor"),
                                  data_dict.get("height"),data_dict.get("width"),
-                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict,use_mmgp )
+                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict )
         gc.collect()
         torch.cuda.empty_cache()
         return (load_images(iamges), data_dict.get("fps"))
