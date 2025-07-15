@@ -1200,13 +1200,13 @@ class SMPLX(SMPLH):
 
         pose_mean = np.concatenate(
             [
-                global_orient_mean,
-                body_pose_mean,
-                jaw_pose_mean,
-                leye_pose_mean,
-                reye_pose_mean,
-                self.left_hand_mean,
-                self.right_hand_mean,
+                global_orient_mean.cpu().numpy(),
+                body_pose_mean.cpu().numpy(),
+                jaw_pose_mean.cpu().numpy(),
+                leye_pose_mean.cpu().numpy(),
+                reye_pose_mean.cpu().numpy(),
+                self.left_hand_mean.cpu().detach().numpy(), # NEED TO CHECK
+                self.right_hand_mean.cpu().detach().numpy(), # NEED TO CHECK
             ],
             axis=0,
         )
@@ -2643,7 +2643,7 @@ def create(
         ValueError: In case the model type is not one of SMPL, SMPLH,
         SMPLX, MANO or FLAME
     """
-    print(model_type,model_path) #smplx F:\ComfyUI311\ComfyUI\models\AniCrafter\pretrained_models/human_model_files
+    #print(model_type,model_path) #smplx F:\ComfyUI311\ComfyUI\models\AniCrafter\pretrained_models/human_model_files
     # If it's a folder, assume
     if osp.isdir(model_path):
         model_path = os.path.join(model_path, model_type)
