@@ -4,11 +4,13 @@
 
 from .. import pose_utils 
 import roma
-import smplx
+#import smplx
+from ....LHM.models.rendering.smplx import smplx
 import torch
 from ..pose_utils import inverse_perspective_projection, perspective_projection
 from ..pose_utils.rot6d import rotation_6d_to_matrix
-from smplx.lbs import vertices2joints
+#from smplx.lbs import vertices2joints
+from ....LHM.models.rendering.smplx.smplx.lbs import vertices2joints
 from torch import nn
 
 
