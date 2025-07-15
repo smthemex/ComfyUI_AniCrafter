@@ -103,7 +103,7 @@ def load_camera(pose):
     c2w = torch.eye(4)
     c2w = c2w.float()
 
-    return c2w, intrinsic, image_height, image_width
+    return c2w.cpu(), intrinsic.cpu(), image_height, image_width # add .cpu()
 
 
 def video_to_pil_images(video_path, height, width,max_frames=81):
@@ -256,8 +256,9 @@ def get_camera_smplx_data(smplx_path,esti_shape):
     trans = np.array([0.0, 0.0, 0.0])
     scale = 1.0
 
-    world_view_transform = torch.tensor(getWorld2View2(R, T, trans, scale)).transpose(0, 1)
-    projection_matrix = getProjectionMatrix_refine(torch.Tensor(K), image_height, image_width, znear, zfar).transpose(0, 1)
+    world_view_transform = torch.tensor(getWorld2View2(R, T, trans, scale)).transpose(0, 1).cpu()
+    projection_matrix = getProjectionMatrix_refine(torch.Tensor(K).cpu(), image_height, image_width, znear, zfar).transpose(0, 1) #
+    #projection_matrix = getProjectionMatrix_refine(K, image_height, image_width, znear, zfar).transpose(0, 1)
     full_proj_transform = (world_view_transform.unsqueeze(0).bmm(projection_matrix.unsqueeze(0))).squeeze(0)
     camera_center = world_view_transform.inverse()[3, :3]
 
@@ -520,7 +521,7 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
 
 
 
-def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,height,width,num_inference_steps,seed,use_teacache,cfg_value,use_tiled,text_emb,image_emb,use_mmgp):
+def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,height,width,num_inference_steps,seed,use_teacache,cfg_value,use_tiled,text_emb,image_emb,):
     
     # H, W = 720, 1280
     # H, W = math.ceil(H / 16) * 16, math.ceil(W / 16) * 16
@@ -537,9 +538,7 @@ def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,hei
     # save_root = args.save_root
     
     #save_video_path = os.path.join(save_root, f'{os.path.basename(scene_path)}/{os.path.basename(character_image_path).split(".")[0]}.mp4')
-    if use_mmgp:
-        from mmgp import offload, profile_type
-        offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.LowRAM_LowVRAM)
+    
 
     # Image-to-video
     try: 
