@@ -1,7 +1,8 @@
 # ComfyUI_AniCrafter
 [AniCrafter](https://github.com/MyNiuuu/AniCrafter): Customizing Realistic Human-Centric Animation via Avatar-Background Conditioning in Video Diffusion Models, you can try this methods  when use ComfyUI.
 
-# Tips 
+# Update 
+* 0715 修复无法重复推理的bug，修复高斯np文件加载device错误，修复输入图片自动裁切错误,example 新增测试用的华仔及其np文件和美少女跳舞内容；
 * 支持自定义视频的推理，支持预处理视频（mask，背景内绘及smplx剪辑）和json文件的 以及gaussian.pth的复用（首次生成需要选择none）；为避免人脸失真，推理尺寸越大越好。等下个周末再修复一些bug吧。
 * need another weekend to fix bugs
 
@@ -20,7 +21,7 @@ pip install -r requirements.txt
 ```
 and 
 ```
-pip install ninja
+
 pip install flash-attn --no-build-isolation
 pip install tb-nightly
 pip install git+https://github.com/XPixelGroup/BasicSR
@@ -44,7 +45,8 @@ str_ = builtins.str
 ```
 
 # 3  Models
-* 3.1 [MyNiuuu/Anicrafter_release](https://huggingface.co/MyNiuuu/Anicrafter_release/tree/main) all fiels/下载pretrained_models所有文件，保存文件夹结构
+* 3.1.1 [MyNiuuu/Anicrafter_release](https://huggingface.co/MyNiuuu/Anicrafter_release/tree/main) all fiels/下载pretrained_models所有文件，保存文件夹结构
+* 3.1.2 [propainter ](https://github.com/sczhou/ProPainter/releases/download/v0.1.0/) download/下载地址；
 ```
 ├── your comfyUI/models/AniCrafter/
 |   ├──pretrained_models
@@ -71,8 +73,7 @@ str_ = builtins.str
 ```
 
 # Example
-![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example.gif)
-![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example.png)
+![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example0715.gif)
 
 
 #Citation
