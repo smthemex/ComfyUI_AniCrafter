@@ -492,7 +492,18 @@ class HumanLRMInferrer(Inferrer):
 
         if gaussian_files is not None and os.path.exists(gaussian_files):
             print(f"Gaussian file already exists, load it from {gaussian_files}")
-            return torch.load(gaussian_files), body_rgb_pil, body_rgb_crop_pil
+            gaussian_data = torch.load(gaussian_files, map_location=torch.device('cpu'))
+    
+            # 确保所有张量都在 CPU 上
+            cpu_gaussian_data = []
+            for tensor in gaussian_data:
+                if isinstance(tensor, torch.Tensor):
+                    cpu_gaussian_data.append(tensor.cpu())
+                else:
+                    cpu_gaussian_data.append(tensor)
+            
+            return cpu_gaussian_data, body_rgb_pil, body_rgb_crop_pil
+            #return torch.load(gaussian_files), body_rgb_pil, body_rgb_crop_pil
         else:
 
             device = "cuda"
