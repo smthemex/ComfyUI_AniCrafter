@@ -356,7 +356,7 @@ class ModelManager_:
         # 从后向前删除，避免索引变化
         for i in sorted(indices_to_remove, reverse=True):
             del self.model[i]  # 删除模型引用
-            self.model.pop(i)  # 从模型列表移除
+            #self.model.pop(i)  # 从模型列表移除
         gc.collect()  # 强制进行垃圾回收
 
     def _clean_lora_cache(self):
