@@ -1,6 +1,6 @@
 from ..models import SDXLTextEncoder, SDXLTextEncoder2, SDXLUNet, SDXLVAEDecoder, SDXLVAEEncoder, SDXLIpAdapter, IpAdapterXLCLIPImageEmbedder
 from ..models.kolors_text_encoder import ChatGLMModel
-from ..models.model_manager import ModelManager
+from ..models.model_manager import ModelManager_ as ModelManager  
 from ..controlnets import MultiControlNetManager, ControlNetUnit, ControlNetConfigUnit, Annotator
 from ..prompters import SDXLPrompter, KolorsPrompter
 from ..schedulers import EnhancedDDIMScheduler

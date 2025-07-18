@@ -2,7 +2,7 @@ from ..models.hunyuan_dit import HunyuanDiT
 from ..models.hunyuan_dit_text_encoder import HunyuanDiTCLIPTextEncoder, HunyuanDiTT5TextEncoder
 from ..models.sdxl_vae_encoder import SDXLVAEEncoder
 from ..models.sdxl_vae_decoder import SDXLVAEDecoder
-from ..models import ModelManager
+from ..models import ModelManager_ as ModelManager
 from ..prompters import HunyuanDiTPrompter
 from ..schedulers import EnhancedDDIMScheduler
 from .base import BasePipeline

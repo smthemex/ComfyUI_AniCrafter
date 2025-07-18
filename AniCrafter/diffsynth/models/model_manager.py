@@ -314,7 +314,7 @@ class ModelDetectorFromPatchedSingleFile:
 
 
 
-class ModelManager:
+class ModelManager_:
     def __init__(
         self,
         torch_dtype=torch.float16,

@@ -1,4 +1,4 @@
-from ..models import ModelManager, SVDImageEncoder, SVDUNet, SVDVAEEncoder, SVDVAEDecoder
+from ..models import ModelManager_ as ModelManager, SVDImageEncoder, SVDUNet, SVDVAEEncoder, SVDVAEDecoder
 from ..schedulers import ContinuousODEScheduler
 from .base import BasePipeline
 import torch

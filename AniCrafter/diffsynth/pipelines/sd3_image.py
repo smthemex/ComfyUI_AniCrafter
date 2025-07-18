@@ -1,4 +1,4 @@
-from ..models import ModelManager, SD3TextEncoder1, SD3TextEncoder2, SD3TextEncoder3, SD3DiT, SD3VAEDecoder, SD3VAEEncoder
+from ..models import ModelManager_ as  ModelManager , SD3TextEncoder1, SD3TextEncoder2, SD3TextEncoder3, SD3DiT, SD3VAEDecoder, SD3VAEEncoder
 from ..prompters import SD3Prompter
 from ..schedulers import FlowMatchScheduler
 from .base import BasePipeline

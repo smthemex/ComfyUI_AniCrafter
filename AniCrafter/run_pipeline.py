@@ -17,8 +17,9 @@ import folder_paths
 from .graphics_utils import getWorld2View2, focal2fov, fov2focal, getProjectionMatrix_refine
 from .lhm_runner import HumanLRMInferrer
 from .LHM.models.rendering.smpl_x_voxel_dense_sampling import SMPLXVoxelMeshModel
-from .diffsynth import ModelManager, WanMovieCrafterCombineVideoPipeline
-
+#from .diffsynth import ModelManager, WanMovieCrafterCombineVideoPipeline
+from .diffsynth import ModelManager_ as ModelManager
+from .diffsynth import WanMovieCrafterCombineVideoPipeline_ as WanMovieCrafterCombineVideoPipeline
 
 
 def pad_image_to_aspect_ratio(image, target_width, target_height, background_color=(255, 255, 255)):
@@ -332,7 +333,8 @@ def prepare_models(dit_path,vae_path, lora_ckpt_path,lora_alpha=1.0):
 
 
 
-def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,AniCrafter_weigths_path,gaussian_files,clear_cache,preprocess_input,pre_video_dir,use_input_mask,fps,max_frames= 81):
+def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,AniCrafter_weigths_path,gaussian_files,clear_cache,preprocess_input,pre_video_dir,use_input_mask,use_bkgd_video,fps,max_frames= 81):
+
     W, H = image_list[0].size
     H, W = math.ceil(H / 16) * 16, math.ceil(W / 16) * 16
     file_prefix = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -355,29 +357,39 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
             bkgd_pils_origin = video_to_pil_images(os.path.join(scene_path, 'bkgd_video.mp4'), H, W,max_frames)
 
         else:
-            # 分别获取视频的人物mask，背景内绘，smplx的json参数及合成后的视频
-            from .ProPainter.inference_propainter import InferencePropainter
-            from .parse_video import get_hunman_mask
+            # 分别获取视频的人物mask，背景内绘，smplx的json参数及合成后的视频 
+            
             from .engine.pose_estimation.video2motion import get_smplx_mesh
 
             print("Start preprocess_input")
             smplx_output_folder=os.path.join(folder_paths.get_output_directory(), f"AniCrafter_{file_prefix}") #保存处理结果，便于下次调用，json目录，smplx_params，smplx_video.mp4,bkgd_video.mp4
             os.makedirs(smplx_output_folder, exist_ok=True)
-
             mask_save_path=os.path.join(smplx_output_folder, "mask_video.mp4")
+
             if use_input_mask:
-                print("Using input mask")   
-            config_path=os.path.join(folder_paths.base_path,"custom_nodes/ComfyUI_AniCrafter/AniCrafter/engine/SegmentAPI/configs/sam2.1_hiera_l.yaml")       
-            mask_list=  use_input_mask if  use_input_mask else get_hunman_mask(image_list,config_path,mask_save_path,fps) # 
+                print("Using input mask video")   
+                mask_list=  use_input_mask
+            else:
+                from .parse_video import get_hunman_mask
+                config_path=os.path.join(folder_paths.base_path,"custom_nodes/ComfyUI_AniCrafter/AniCrafter/engine/SegmentAPI/configs/sam2.1_hiera_l.yaml") 
+                mask_list=   get_hunman_mask(image_list,config_path,mask_save_path,fps) # 
             print("get mask done")
             
+            # get get_smplx_mesh
+            print("starting smplx generation")
             smplx_mesh_pils_origin_,smplx_path=get_smplx_mesh(pose_estimate_path,image_list,mask_list,smplx_output_folder,fps)
             print("get splx done")
 
             smplx_mesh_pils_origin = crop_image(smplx_mesh_pils_origin_,max_frames)
+
             save_path=os.path.join(smplx_output_folder, 'bkgd_video.mp4')
             pretrain_model_url = 'https://github.com/sczhou/ProPainter/releases/download/v0.1.0/'
-            bkgd_video_list=InferencePropainter(pretrain_model_url,image_list,mask_list,mask_dilation= 16,ref_stride= 2,neighbor_length= 3,resize_ratio= 0.5,model_dir=os.path.join(folder_paths.models_dir, 'AniCrafter/pretrained_models/propainter'),save_path=save_path,save_fps=fps)
+            if use_bkgd_video is not None:
+                print("Using input bkgd video") 
+                bkgd_video_list= use_bkgd_video
+            else:
+                from .ProPainter.inference_propainter import InferencePropainter
+                bkgd_video_list=InferencePropainter(pretrain_model_url,image_list,mask_list,mask_dilation= 16,ref_stride= 2,neighbor_length= 3,resize_ratio= 0.5,model_dir=os.path.join(folder_paths.models_dir, 'AniCrafter/pretrained_models/propainter'),save_path=save_path,save_fps=fps)
 
             bkgd_pils_origin = crop_image(bkgd_video_list, max_frames)
            
@@ -393,10 +405,11 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
 
     HumanLRMInferrer_ = HumanLRMInferrer(base_dir)
     HumanLRMInferrer_.load_model()
+
     print('lhm_runner init')
     gaussians_list, body_rgb_pil, crop_body_pil = HumanLRMInferrer_.infer(character_image_path, save_gaussian_path,gaussian_files,clear_cache) #TODO check reload
+    print('lhm_runner infer done')
    
-    print(f'gaussians_list: {len(gaussians_list)}')
     body_rgb_pil_pad = pad_image_to_aspect_ratio(crop_body_pil, W, H)
     dxdydz, xyz, rgb, opacity, scaling, rotation, transform_mat_neutral_pose, esti_shape, body_ratio, have_face = gaussians_list
 
@@ -523,22 +536,7 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
 
 def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,height,width,num_inference_steps,seed,use_teacache,cfg_value,use_tiled,text_emb,image_emb,):
     
-    # H, W = 720, 1280
-    # H, W = math.ceil(H / 16) * 16, math.ceil(W / 16) * 16
-    # print(H, W)
 
-    #seed = 0
-    #max_frames = 81
-    #use_teacache = False
-    #cfg_value = 1.5
-
-    # ckpt_path = args.ckpt_path
-    # wan_base_ckpt_path = args.wan_base_ckpt_path
-    # character_image_path = args.character_image_path
-    # save_root = args.save_root
-    
-    #save_video_path = os.path.join(save_root, f'{os.path.basename(scene_path)}/{os.path.basename(character_image_path).split(".")[0]}.mp4')
-    
 
     # Image-to-video
     try: 
@@ -566,9 +564,8 @@ def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,hei
     except Exception as e:
         print(e)
         pipe.to("cpu")
-        return None
+        return [Image.new('RGB', (width, height), (255, 255, 255)),]*image_emb.get("max_frames")
 
-    #save_video(ref_frame_pils_origin, [smplx_mesh_pils_origin[0]] + smplx_mesh_pils_origin[:-1], [blend_pils_origin[0]] + blend_pils_origin[:-1], video, save_video_path, fps=15)
     return video
 
 

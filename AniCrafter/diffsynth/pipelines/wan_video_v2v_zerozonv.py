@@ -1,4 +1,4 @@
-from ..models import ModelManager
+from ..models import ModelManager_ as ModelManager
 from ..models.wan_video_dit import WanModel
 from ..models.wan_video_text_encoder import WanTextEncoder
 from ..models.wan_video_vae import WanVideoVAE

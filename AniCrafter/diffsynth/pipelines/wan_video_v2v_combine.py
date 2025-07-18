@@ -1,4 +1,4 @@
-from ..models import ModelManager
+from ..models import ModelManager_ as ModelManager
 from ..models.wan_video_dit import WanModel
 from ..models.wan_video_text_encoder import WanTextEncoder
 from ..models.wan_video_vae import WanVideoVAE
@@ -139,7 +139,7 @@ def model_fn_wan_video(
 
 tokenizer_path_=os.path.join(folder_paths.base_path,"custom_nodes\ComfyUI_AniCrafter\configs\Wan2.1-I2V-14B-720P")
 
-class WanMovieCrafterCombineVideoPipeline(BasePipeline):
+class WanMovieCrafterCombineVideoPipeline_(BasePipeline):
 
     def __init__(self, device="cuda", torch_dtype=torch.float16, tokenizer_path=tokenizer_path_):
         super().__init__(device=device, torch_dtype=torch_dtype)
@@ -319,7 +319,7 @@ class WanMovieCrafterCombineVideoPipeline(BasePipeline):
     def from_model_manager(model_manager: ModelManager, torch_dtype=None, device=None):
         if device is None: device = model_manager.device
         if torch_dtype is None: torch_dtype = model_manager.torch_dtype
-        pipe = WanMovieCrafterCombineVideoPipeline(
+        pipe = WanMovieCrafterCombineVideoPipeline_(
             device=device, 
             torch_dtype=torch_dtype, 
         )

@@ -3,7 +3,7 @@ import difflib
 import torch
 import numpy as np
 import re
-from ..models.model_manager import ModelManager
+from ..models.model_manager import ModelManager_ as ModelManager
 from PIL import Image
 
 valid_colors = {  # r, g, b

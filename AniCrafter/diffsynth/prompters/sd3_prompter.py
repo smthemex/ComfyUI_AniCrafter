@@ -1,5 +1,5 @@
 from .base_prompter import BasePrompter
-from ..models.model_manager import ModelManager
+from ..models.model_manager import ModelManager_ as ModelManager
 from ..models import SD3TextEncoder1, SD3TextEncoder2, SD3TextEncoder3
 from transformers import CLIPTokenizer, T5TokenizerFast
 import os, torch

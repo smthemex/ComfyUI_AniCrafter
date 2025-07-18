@@ -14,5 +14,4 @@ from .step_video import StepVideoPipeline
 from .wan_video import WanVideoPipeline, WanUniAnimateVideoPipeline, WanRepalceAnyoneVideoPipeline, WanUniAnimateLongVideoPipeline
 from .wan_video_v2v import WanMovieCrafterVideoPipeline
 from .wan_video_v2v_zerozonv import WanMovieCrafterZeroConvVideoPipeline
-from .wan_video_v2v_combine import WanMovieCrafterCombineVideoPipeline
-KolorsImagePipeline = SDXLImagePipeline
+from .wan_video_v2v_combine import WanMovieCrafterCombineVideoPipeline_ 
