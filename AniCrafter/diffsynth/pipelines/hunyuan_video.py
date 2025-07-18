@@ -1,4 +1,4 @@
-from ..models import ModelManager, SD3TextEncoder1, HunyuanVideoVAEDecoder, HunyuanVideoVAEEncoder
+from ..models import ModelManager_ as ModelManager, SD3TextEncoder1, HunyuanVideoVAEDecoder, HunyuanVideoVAEEncoder
 from ..models.hunyuan_video_dit import HunyuanVideoDiT
 from ..models.hunyuan_video_text_encoder import HunyuanVideoLLMEncoder
 from ..schedulers.flow_match import FlowMatchScheduler

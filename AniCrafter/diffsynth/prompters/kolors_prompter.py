@@ -1,5 +1,5 @@
 from .base_prompter import BasePrompter
-from ..models.model_manager import ModelManager
+from ..models.model_manager import ModelManager_ as ModelManager
 import json, os, re
 from typing import List, Optional, Union, Dict
 from sentencepiece import SentencePieceProcessor

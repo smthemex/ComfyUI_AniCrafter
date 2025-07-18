@@ -1,5 +1,5 @@
 from ..models import SDTextEncoder, SDUNet, SDVAEDecoder, SDVAEEncoder, SDIpAdapter, IpAdapterCLIPImageEmbedder, SDMotionModel
-from ..models.model_manager import ModelManager
+from ..models.model_manager import ModelManager_ as ModelManager
 from ..controlnets import MultiControlNetManager, ControlNetUnit, ControlNetConfigUnit, Annotator
 from ..prompters import SDPrompter
 from ..schedulers import EnhancedDDIMScheduler

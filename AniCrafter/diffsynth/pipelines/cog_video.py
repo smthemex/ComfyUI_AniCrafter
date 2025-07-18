@@ -1,4 +1,4 @@
-from ..models import ModelManager, FluxTextEncoder2, CogDiT, CogVAEEncoder, CogVAEDecoder
+from ..models import ModelManager_ as ModelManager, FluxTextEncoder2, CogDiT, CogVAEEncoder, CogVAEDecoder
 from ..prompters import CogPrompter
 from ..schedulers import EnhancedDDIMScheduler
 from .base import BasePipeline

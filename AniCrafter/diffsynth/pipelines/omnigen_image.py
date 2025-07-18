@@ -1,7 +1,7 @@
 from ..models.omnigen import OmniGenTransformer
 from ..models.sdxl_vae_encoder import SDXLVAEEncoder
 from ..models.sdxl_vae_decoder import SDXLVAEDecoder
-from ..models.model_manager import ModelManager
+from ..models.model_manager import ModelManager_ as ModelManager
 from ..prompters.omnigen_prompter import OmniGenPrompter
 from ..schedulers import FlowMatchScheduler
 from .base import BasePipeline

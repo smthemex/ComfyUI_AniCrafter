@@ -1,5 +1,5 @@
 from .base_prompter import BasePrompter, tokenize_long_prompt
-from ..models.model_manager import ModelManager
+from ..models.model_manager import ModelManager_ as ModelManager
 from ..models import SDXLTextEncoder, SDXLTextEncoder2
 from transformers import CLIPTokenizer
 import torch, os

@@ -1,4 +1,4 @@
-from ..models import ModelManager
+from ..models import ModelManager_ as ModelManager
 from ..models.hunyuan_dit_text_encoder import HunyuanDiTCLIPTextEncoder
 from ..models.stepvideo_text_encoder import STEP1TextEncoder
 from ..models.stepvideo_dit import StepVideoModel

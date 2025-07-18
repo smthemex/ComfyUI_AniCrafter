@@ -5,7 +5,7 @@ import torch
 import gc
 import numpy as np
 from torchvision.transforms import v2
-from .AniCrafter.diffsynth import ModelManager
+from .AniCrafter.diffsynth import ModelManager_ as ModelManager
 from .node_utils import gc_cleanup,tensor2pil_upscale,tensor2pil_list,find_gaussian_files,load_images,find_directories,tensor_to_pil
 #from .AniCrafter.run_pipeline_with_preprocess import prepare_models,predata_for_anicrafter,infer_anicrafter
 from .AniCrafter.run_pipeline import predata_for_anicrafter_dispre,prepare_models,infer_anicrafter
@@ -154,6 +154,7 @@ class AniCrafterPreVideo:
             },
              "optional": {
                 "video_mask": ("IMAGE",),  # [B,H,W,C], C=3,B>1
+                "video_bkgd": ("IMAGE",),   
             }
             }
 
@@ -165,25 +166,34 @@ class AniCrafterPreVideo:
     def sampler_main(self, image_data,video_image,gaussian_files,width,height ,max_frames,fps,clean_up,preprocess_input,pre_video_dir,**kwargs ):
         
         input_mask=kwargs.get("video_mask")
+        input_bkgd=kwargs.get("video_bkgd")
+
         character_image=image_data.get("character_image")
         max_frames=max_frames + 1 #  must be 1 (mod 4)
 
-        if isinstance(input_mask, torch.Tensor):
-            use_input_mask=tensor2pil_list(input_mask,width,height)[:max_frames]
-            #print(f'use_input_mask: {len(use_input_mask)}')
-        else:
-            use_input_mask=None
         
+        use_input_mask=tensor2pil_list(input_mask,width,height)[:max_frames] if isinstance(input_mask, torch.Tensor) else None
+        use_bkgd_video=tensor2pil_list(video_image,width,height)[:max_frames] if isinstance(input_bkgd, torch.Tensor) else None
+
        
         image_list=tensor2pil_list(video_image,width,height)[:max_frames]
         #print("image_list",len(image_list))
 
         if use_input_mask is not None:
-            if len(image_list) != len(use_input_mask):
+            if len(image_list) != len(use_input_mask): #防止mask和视频长度不一致
                 min_frames=min(len(image_list),len(use_input_mask))
                 image_list=image_list[:min_frames]
                 use_input_mask=use_input_mask[:min_frames]
                 max_frames=min_frames
+
+        if use_bkgd_video is not None:
+            if len(image_list) != len(use_bkgd_video): #防止mask，内绘图和视频长度不一致
+                min_frames=min(len(image_list),len(use_bkgd_video),len(use_input_mask)) if  use_input_mask is not None else min(len(image_list),len(use_bkgd_video))
+                use_bkgd_video=use_bkgd_video[:min_frames]
+                use_input_mask=use_input_mask[:min_frames] if use_input_mask is not None else None
+                image_list=image_list[:min_frames]
+                max_frames=min_frames
+
 
         frame_process_norm = v2.Compose([
         v2.Resize(size=(height, width), antialias=True),
@@ -195,7 +205,7 @@ class AniCrafterPreVideo:
         else:
             pre_video_dir_=pre_video_dir
         ref_combine_blend_tensor,ref_combine_smplx_tensor,height_, width_=predata_for_anicrafter_dispre(frame_process_norm,
-                                image_list,character_image,AniCrafter_weigths_path,gaussian_files,clean_up,preprocess_input,pre_video_dir_,use_input_mask,fps,max_frames)
+                                image_list,character_image,AniCrafter_weigths_path,gaussian_files,clean_up,preprocess_input,pre_video_dir_,use_input_mask,use_bkgd_video,fps,max_frames)
         image_data["ref_combine_blend_tensor"]=ref_combine_blend_tensor
         image_data["ref_combine_smplx_tensor"]=ref_combine_smplx_tensor
         image_data["width"]=width_
@@ -215,7 +225,8 @@ class AniCrafterLoader:
                 "dit": (["none"] + folder_paths.get_filename_list("diffusion_models"),),
                 "vae": (["none"] + folder_paths.get_filename_list("vae"),),
                 "lora_alpha":("FLOAT", {"default": 1.0, "min": 0.1, "max": 1.0, "step": 0.1}),
-                "use_mmgp": ("BOOLEAN", {"default": True},),
+                "use_mmgp": ([ "LowRAM_LowVRAM","VerylowRAM_LowVRAM","LowRAM_HighVRAM","HighRAM_LowVRAM","HighRAM_HighVRAM","none",],),
+
             },
         }
 
@@ -241,9 +252,19 @@ class AniCrafterLoader:
         print("***********Load model ***********")
 
         pipe = prepare_models(dit_path,vae_path, os.path.join(AniCrafter_weigths_path, "pretrained_models/anicrafter"),lora_alpha)
-        if use_mmgp:
+        if use_mmgp!="none":
             from mmgp import offload, profile_type
-            offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.LowRAM_LowVRAM)
+            if use_mmgp=="VerylowRAM_LowVRAM":
+                offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.VerylowRAM_LowVRAM)
+            elif use_mmgp=="LowRAM_LowVRAM":  
+                offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.LowRAM_LowVRAM)
+            elif use_mmgp=="LowRAM_HighVRAM":
+                offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.LowRAM_HighVRAM)
+            elif use_mmgp=="HighRAM_LowVRAM":
+                offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.HighRAM_LowVRAM)
+            elif use_mmgp=="HighRAM_HighVRAM":
+                offload.profile({"transformer": pipe.dit, "vae": pipe.vae}, profile_type.HighRAM_HighVRAM)
+            
         print("***********Load model done ***********")
 
         gc_cleanup()
