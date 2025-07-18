@@ -2,6 +2,7 @@
 [AniCrafter](https://github.com/MyNiuuu/AniCrafter): Customizing Realistic Human-Centric Animation via Avatar-Background Conditioning in Video Diffusion Models, you can try this methods  when use ComfyUI.
 
 # Update 
+* 0718 新增mmgp模式可选，高GPU和VRAM 可以选none或high模式，修改部分代码，尝试解决diffsynth模块在不同节点中的冲突 ，新增bgkb视频可选输入（背景去掉人物内绘，推荐用插件[ComfyUI_DiffuEraser](https://github.com/smthemex/ComfyUI_DiffuEraser)），请使用最新的workflow.
 * 0715 修复无法重复推理的bug，修复高斯np文件加载device错误，修复输入图片自动裁切错误,example 新增测试用的华仔及其np文件和美少女跳舞内容；
 * 支持自定义视频的推理，支持预处理视频（mask，背景内绘及smplx剪辑）和json文件的 以及gaussian.pth的复用（首次生成需要选择none）；为避免人脸失真，推理尺寸越大越好。等下个周末再修复一些bug吧。
 * need another weekend to fix bugs
