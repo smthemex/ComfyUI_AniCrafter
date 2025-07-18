@@ -322,7 +322,7 @@ class ModelManager_:
         model_id_list: List[Preset_model_id] = [],
         downloading_priority: List[Preset_model_website] = ["ModelScope", "HuggingFace"],
         file_path_list: List[str] = [],
-        clear_memory_when: bool = False
+        # clear_memory_when: bool = False
     ):
         self.torch_dtype = torch_dtype
         self.device = device
@@ -341,15 +341,22 @@ class ModelManager_:
         self.state_dict_new = {}
         self.state_dict_new_save = {}
         self._weights_used = False
-        if clear_memory_when:
-            self.clear_model_memory()  # 符合条件时清空内存
+        # if clear_memory_when:
+        #     self.clear_model_memory()  # 符合条件时清空内存
 
 
-    def clear_model_memory(self):
+    def clear_model_memory(self, model_name):
+
         """清空模型在内存中的占用"""
-        for model in self.model:
-            del model  # 删除模型引用
-        self.model = []  # 清空模型列表
+        indices_to_remove = []
+        for i, name in enumerate([model_name]):
+            if name == model_name:
+                indices_to_remove.append(i)
+        
+        # 从后向前删除，避免索引变化
+        for i in sorted(indices_to_remove, reverse=True):
+            del self.model[i]  # 删除模型引用
+            self.model.pop(i)  # 从模型列表移除
         gc.collect()  # 强制进行垃圾回收
 
     def _clean_lora_cache(self):

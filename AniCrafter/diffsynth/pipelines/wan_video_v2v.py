@@ -5,7 +5,7 @@ from ..models.wan_video_vae import WanVideoVAE
 from ..models.wan_video_image_encoder import WanImageEncoder
 from ..schedulers.flow_match import FlowMatchScheduler
 from .base import BasePipeline
-from ..prompters import WanPrompter
+from ..prompters import WanPrompter_ as WanPrompter
 import torch, os
 from einops import rearrange
 import numpy as np

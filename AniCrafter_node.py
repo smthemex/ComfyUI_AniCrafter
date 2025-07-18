@@ -10,7 +10,7 @@ from .node_utils import gc_cleanup,tensor2pil_upscale,tensor2pil_list,find_gauss
 #from .AniCrafter.run_pipeline_with_preprocess import prepare_models,predata_for_anicrafter,infer_anicrafter
 from .AniCrafter.run_pipeline import predata_for_anicrafter_dispre,prepare_models,infer_anicrafter
 import folder_paths
-from .AniCrafter.diffsynth.prompters import WanPrompter
+from .AniCrafter.diffsynth.prompters import WanPrompter_ as WanPrompter
 
 
 ########
@@ -66,7 +66,7 @@ class AniCrafterPreImage:
         clip_context = image_encoder.encode_image([image])
         image_encoder.to("cpu")
         if clean_up:
-            model_manager.clear_model_memory()
+            model_manager.clear_model_memory("wan_video_image_encoder")
         gc_cleanup()
         print(clip_context.shape)#torch.Size([1, 257, 1280]) is_cuda True
         #print(clip_context.dtype)#torch.bfloat16
@@ -123,7 +123,7 @@ class AniCrafterPreText:
             prompt_emb_posi = prompt_emb_posi.to(device)
             prompt_emb_nega = prompt_emb_nega.to(device)
         if clean_up:
-            model_manager.clear_model_memory()
+            model_manager.clear_model_memory("wan_video_text_encoder")
         print(prompt_emb_posi.shape,prompt_emb_nega.shape,prompt_emb_posi.is_cuda,prompt_emb_posi.dtype) #torch.Size([1, 512, 4096]) torch.Size([1, 512, 4096]) # True torch.float32
 
        
