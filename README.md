@@ -33,9 +33,10 @@ pip install git+https://github.com/camenduru/simple-knn/
 
 ```
 
-# If python version >3.10,need modify 'chumpy' packeage  :
-* '...site-packages\chumpy\ch.py' ,line 1203 ,change ' inspect.getargspec' to 'inspect.getfullargspec'
-* '...site-packages\chumpy\__init__.py' ,line 11,change  'from numpy import bool, int, float, complex, object, unicode, str, nan, inf 'to
+# TIPS
+* If python version >3.9,need modify 'chumpy' packeage  :  
+  -- find  '...site-packages\chumpy\ch.py' ,line 1203 ,change ' inspect.getargspec' to 'inspect.getfullargspec'   
+  -- find  '...site-packages\chumpy\__init__.py' ,line 11,change  'from numpy import bool, int, float, complex, object, unicode, str, nan, inf 'to
 ```
 from numpy import complex_, object_, nan, inf
 import builtins
