@@ -81,7 +81,7 @@ class HuggingfaceTokenizer:
         return text
 
 
-class WanPrompter(BasePrompter):
+class WanPrompter_(BasePrompter):
 
     def __init__(self, tokenizer_path=None, text_len=512):
         super().__init__()
