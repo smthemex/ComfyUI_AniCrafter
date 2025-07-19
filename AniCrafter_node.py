@@ -5,13 +5,12 @@ import torch
 import gc
 import numpy as np
 from torchvision.transforms import v2
-from .AniCrafter.diffsynth import ModelManager_ as ModelManager
+from .AniCrafter.diffsynth import ModelManager_
 from .node_utils import gc_cleanup,tensor2pil_upscale,tensor2pil_list,find_gaussian_files,load_images,find_directories,tensor_to_pil
 #from .AniCrafter.run_pipeline_with_preprocess import prepare_models,predata_for_anicrafter,infer_anicrafter
 from .AniCrafter.run_pipeline import predata_for_anicrafter_dispre,prepare_models,infer_anicrafter
 import folder_paths
-from .AniCrafter.diffsynth.prompters import WanPrompter_ as WanPrompter
-
+from .AniCrafter.diffsynth.prompters import WanPrompter_ 
 
 ########
 MAX_SEED = np.iinfo(np.int32).max
@@ -57,7 +56,7 @@ class AniCrafterPreImage:
         else:
             clip_vision_path=folder_paths.get_full_path("clip_vision", clip_vision)
 
-        model_manager = ModelManager(device="cpu")
+        model_manager = ModelManager_(device="cpu")
         model_manager.load_models([clip_vision_path],torch_dtype=torch.bfloat16,) # Image Encoder is loaded with float32)  #
         image_encoder = model_manager.fetch_model("wan_video_image_encoder")
         character_image=tensor_to_pil(role_image)
@@ -101,9 +100,9 @@ class AniCrafterPreText:
         else:
             T5_path=folder_paths.get_full_path("clip", T5)
 
-        model_manager = ModelManager(device="cpu")
+        model_manager = ModelManager_(device="cpu")
         tokenizer_path_=os.path.join(folder_paths.base_path,"custom_nodes/ComfyUI_AniCrafter/configs/Wan2.1-I2V-14B-720P/google/umt5-xxl")
-        prompter = WanPrompter(tokenizer_path=tokenizer_path_)
+        prompter = WanPrompter_(tokenizer_path=tokenizer_path_)
         model_manager.load_models([T5_path,],torch_dtype=torch.bfloat16,) # You can set `torch_dtype=torch.float8_e4m3fn` to enable FP8 quantization.)
         text_encoder_model_and_path = model_manager.fetch_model("wan_video_text_encoder", require_model_path=True)
         #print(text_encoder_model_and_path)
@@ -148,6 +147,7 @@ class AniCrafterPreVideo:
                 "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 16, "display": "number"}),
                 "max_frames": ("INT", {"default": 80, "min": 8, "max": 2048, "step": 4, "display": "number"}),
                 "fps": ("FLOAT", {"default": 24.0, "min": 5.0, "max": 120.0, "step": 1.0}),
+                "camera_fov":("INT", {"default": 60, "min": 10, "max": 100, "step": 5, "display": "number"}),
                 "clean_up": ("BOOLEAN", {"default": True},),
                 "preprocess_input": ("BOOLEAN", {"default": True},),
                 "pre_video_dir": (pre_video_dir_list,),
@@ -163,7 +163,7 @@ class AniCrafterPreVideo:
     FUNCTION = "sampler_main"
     CATEGORY = "AniCrafter"
 
-    def sampler_main(self, image_data,video_image,gaussian_files,width,height ,max_frames,fps,clean_up,preprocess_input,pre_video_dir,**kwargs ):
+    def sampler_main(self, image_data,video_image,gaussian_files,width,height ,max_frames,fps,camera_fov,clean_up,preprocess_input,pre_video_dir,**kwargs ):
         
         input_mask=kwargs.get("video_mask")
         input_bkgd=kwargs.get("video_bkgd")
@@ -205,7 +205,7 @@ class AniCrafterPreVideo:
         else:
             pre_video_dir_=pre_video_dir
         ref_combine_blend_tensor,ref_combine_smplx_tensor,height_, width_=predata_for_anicrafter_dispre(frame_process_norm,
-                                image_list,character_image,AniCrafter_weigths_path,gaussian_files,clean_up,preprocess_input,pre_video_dir_,use_input_mask,use_bkgd_video,fps,max_frames)
+                                image_list,character_image,AniCrafter_weigths_path,gaussian_files,clean_up,preprocess_input,pre_video_dir_,use_input_mask,use_bkgd_video,fps,camera_fov,max_frames)
         image_data["ref_combine_blend_tensor"]=ref_combine_blend_tensor
         image_data["ref_combine_smplx_tensor"]=ref_combine_smplx_tensor
         image_data["width"]=width_
@@ -236,11 +236,13 @@ class AniCrafterLoader:
     CATEGORY = "AniCrafter"
 
     def loader_main(self,dit,vae,lora_alpha,use_mmgp):
-
+        wan_repo="Wan2.1-I2V-14B-720P"
         if dit == "none":
             raise ValueError("Please select a DIT model")
         else:
             dit_path=folder_paths.get_full_path("diffusion_models", dit)
+            if "480P" in dit_path:
+                wan_repo="Wan2.1-I2V-14B-480P"
         
         if vae == "none":
             raise ValueError("Please select a VAE model")
@@ -269,7 +271,8 @@ class AniCrafterLoader:
 
         gc_cleanup()
 
-        return (pipe ,)
+        return ({"pipe":pipe ,"wan_repo":wan_repo},)
+
 
 
 class AniCrafterSampler:
@@ -297,12 +300,13 @@ class AniCrafterSampler:
 
     def sampler_main(self,text_emb, data_dict, model, seed, num_inference_steps,cfg_value, use_teacache,use_tiled,):
 
-
+        wan_repo=model.get("wan_repo")
+        model=model.get("pipe")
         print("***********Start infer  ***********")
 
         iamges = infer_anicrafter(model, data_dict.get("ref_combine_blend_tensor"),data_dict.get("ref_combine_smplx_tensor"),
                                  data_dict.get("height"),data_dict.get("width"),
-                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict )
+                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict,wan_repo)
         gc.collect()
         torch.cuda.empty_cache()
         return (load_images(iamges), data_dict.get("fps"))
