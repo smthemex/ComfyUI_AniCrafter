@@ -301,7 +301,7 @@ def prepare_smplx_model(base_ckpt_path, ):
 
 
 
-def prepare_models(dit_path,vae_path, lora_ckpt_path,lora_alpha=1.0):
+def prepare_models(dit_path,vae_path, lora_ckpt_path,lora_alpha=1.0,lora_path=None,lora_extra_alpha=None):
 
     # Load models
     model_manager = ModelManager(device="cpu")
@@ -321,6 +321,11 @@ def prepare_models(dit_path,vae_path, lora_ckpt_path,lora_alpha=1.0):
         os.path.join(lora_ckpt_path, "model-00011-of-00011.safetensors"),
         ], lora_alpha=lora_alpha)
 
+    
+    if lora_path and lora_extra_alpha :
+        for i,lora_p in enumerate (lora_path):
+            model_manager.load_lora_v2_combine(lora_p, lora_alpha=lora_extra_alpha[i])
+    
     # assert False
  
     pipe = WanMovieCrafterCombineVideoPipeline.from_model_manager(
