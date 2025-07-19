@@ -2,6 +2,7 @@
 [AniCrafter](https://github.com/MyNiuuu/AniCrafter): Customizing Realistic Human-Centric Animation via Avatar-Background Conditioning in Video Diffusion Models, you can try this methods  when use ComfyUI.
 
 # Update 
+* 0719 pm 新增lightX2V lora加载和常规style lora加载菜单，如果使用lightX2V lora，cfg请调整为1，推荐步数6步，风格lora需要填写prompt暂时未适配对应的调度器；
 * 0719 新增镜头fov参数，全身镜头默认60，对于广角镜头需要调节至小于45，否则smplx的人物占比会变小，模型支持480P，似乎有色差；
 * 0718 新增mmgp模式可选，高GPU和VRAM 可以选none或high模式，修改部分代码，尝试解决diffsynth模块在不同节点中的冲突 ，新增bgkb视频可选输入（背景去掉人物内绘，推荐用插件[ComfyUI_DiffuEraser](https://github.com/smthemex/ComfyUI_DiffuEraser)），请使用最新的workflow.
 * 支持自定义视频的推理，支持预处理视频（mask，背景内绘及smplx剪辑）和json文件的 以及gaussian.pth的复用（首次生成需要选择none）；为避免人脸失真，推理尺寸越大越好（使用720P模型时）。
@@ -81,8 +82,16 @@ str_ = builtins.str
 ├── your comfyUI/models/diffusion_models/
 |   ├──Wan2_1-I2V-14B-720P_fp8_e4m3fn.safetensors  # or  Wan2_1-I2V-14B-480P_fp8_e4m3fn.safetensors  #16G
 ```
+* 3.4 wan 2.1 lora lightX2V or other from here [Kijai/WanVideo_comfy](https://huggingface.co/Kijai/WanVideo_comfy/tree/main)  支持加速lora
+```
+  ├── your comfyUI/models/loras/
+     ├──lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors # or other 
+```
 
 # Example
+* new use lightx2v
+![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example.png)
+*   version
 ![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example.gif)
 
 
