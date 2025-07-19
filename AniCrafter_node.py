@@ -224,7 +224,11 @@ class AniCrafterLoader:
             "required": {
                 "dit": (["none"] + folder_paths.get_filename_list("diffusion_models"),),
                 "vae": (["none"] + folder_paths.get_filename_list("vae"),),
+                "lora_light": (["none"] + folder_paths.get_filename_list("loras"),),
+                "lora_style": (["none"] + folder_paths.get_filename_list("loras"),),
                 "lora_alpha":("FLOAT", {"default": 1.0, "min": 0.1, "max": 1.0, "step": 0.1}),
+                "lora_light_alpha":("FLOAT", {"default": 1.0, "min": 0.1, "max": 1.0, "step": 0.1}),
+                "lora_style_alpha":("FLOAT", {"default": 1.0, "min": 0.1, "max": 1.0, "step": 0.1}),
                 "use_mmgp": ([ "LowRAM_LowVRAM","VerylowRAM_LowVRAM","LowRAM_HighVRAM","HighRAM_LowVRAM","HighRAM_HighVRAM","none",],),
 
             },
@@ -235,7 +239,8 @@ class AniCrafterLoader:
     FUNCTION = "loader_main"
     CATEGORY = "AniCrafter"
 
-    def loader_main(self,dit,vae,lora_alpha,use_mmgp):
+    def loader_main(self,dit,vae,lora_light,lora_style,lora_alpha,lora_light_alpha,lora_style_alpha,use_mmgp):
+
         wan_repo="Wan2.1-I2V-14B-720P"
         if dit == "none":
             raise ValueError("Please select a DIT model")
@@ -248,12 +253,30 @@ class AniCrafterLoader:
             raise ValueError("Please select a VAE model")
         else:
             vae_path=folder_paths.get_full_path("vae", vae)
+
+        if lora_light != "none":
+            lora_light_path=folder_paths.get_full_path("loras", lora_light)
+        else:
+            lora_light_path=None
+            lora_light_alpha=None
+
+        if lora_style != "none":
+            lora_style_path=folder_paths.get_full_path("loras", lora_style)
+        else:
+            lora_style_path=None
+            lora_style_alpha=None
+
        
 
         # load model
         print("***********Load model ***********")
 
-        pipe = prepare_models(dit_path,vae_path, os.path.join(AniCrafter_weigths_path, "pretrained_models/anicrafter"),lora_alpha)
+        compile_lora=[i for i in [lora_light_path,lora_style_path] if i is not None]
+        compile_alpha=[i for i in [lora_light_alpha,lora_style_alpha] if i is not None]
+
+        pipe = prepare_models(dit_path,vae_path, os.path.join(AniCrafter_weigths_path, "pretrained_models/anicrafter"),lora_alpha,compile_lora,compile_alpha)
+
+
         if use_mmgp!="none":
             from mmgp import offload, profile_type
             if use_mmgp=="VerylowRAM_LowVRAM":
