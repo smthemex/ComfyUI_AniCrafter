@@ -333,7 +333,7 @@ def prepare_models(dit_path,vae_path, lora_ckpt_path,lora_alpha=1.0):
 
 
 
-def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,AniCrafter_weigths_path,gaussian_files,clear_cache,preprocess_input,pre_video_dir,use_input_mask,use_bkgd_video,fps,max_frames= 81):
+def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,AniCrafter_weigths_path,gaussian_files,clear_cache,preprocess_input,pre_video_dir,use_input_mask,use_bkgd_video,fps,camera_fov,max_frames= 81):
 
     W, H = image_list[0].size
     H, W = math.ceil(H / 16) * 16, math.ceil(W / 16) * 16
@@ -377,7 +377,7 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
             
             # get get_smplx_mesh
             print("starting smplx generation")
-            smplx_mesh_pils_origin_,smplx_path=get_smplx_mesh(pose_estimate_path,image_list,mask_list,smplx_output_folder,fps)
+            smplx_mesh_pils_origin_,smplx_path=get_smplx_mesh(pose_estimate_path,image_list,mask_list,smplx_output_folder,fps,camera_fov)
             print("get splx done")
 
             smplx_mesh_pils_origin = crop_image(smplx_mesh_pils_origin_,max_frames)
@@ -534,10 +534,10 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
 
 
 
-def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,height,width,num_inference_steps,seed,use_teacache,cfg_value,use_tiled,text_emb,image_emb,):
+def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,height,width,num_inference_steps,seed,use_teacache,cfg_value,use_tiled,text_emb,image_emb,wan_repo="Wan2.1-I2V-14B-720P"):
     
 
-
+    
     # Image-to-video
     try: 
         video = pipe(
@@ -554,7 +554,7 @@ def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,hei
             width=width,
             num_frames=image_emb.get("max_frames"),
             tea_cache_l1_thresh=0.3 if use_teacache else None,
-            tea_cache_model_id="Wan2.1-I2V-14B-720P" if use_teacache else None,
+            tea_cache_model_id=wan_repo if use_teacache else None,
             prompt_emb_posi=text_emb.get("prompt_emb_posi"),
             prompt_emb_nega=text_emb.get("prompt_emb_nega") if cfg_value!=1 else None,
             clip_context=image_emb.get("clip_context"),
