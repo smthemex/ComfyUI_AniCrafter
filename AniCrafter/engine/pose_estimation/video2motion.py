@@ -172,8 +172,8 @@ def video_to_pil_images(video_path, height=None, width=None):
 
 
 
-def load_video(video_path, pad_ratio):
-    fps = 30
+def load_video(video_path, pad_ratio,fps):
+    #fps = 30
     all_images = video_to_pil_images(video_path)
 
     try:
@@ -545,7 +545,7 @@ class Video2MotionPipeline:
 
         keypoints = torch.tensor(keypoints, device=self.device)
         bboxes = torch.tensor(bboxes, device=self.device)
-        bboxes = bbox_xyxy_to_cxcywh(bboxes, scale=1.5)
+        bboxes = bbox_xyxy_to_cxcywh(bboxes, scale=1.5) #TO DO #scale=1.5？
 
         crop_images, crop_annotations = images_crop(
             frames, bboxes, target_size=target_img_size, device=self.device
@@ -801,7 +801,7 @@ def make_dataset(dir, target_camera_list):
 
 
 
-def get_smplx_mesh(model_path,image_list,mask_list,smplx_mesh_output_path,fps):
+def get_smplx_mesh(model_path,image_list,mask_list,smplx_mesh_output_path,fps,FOV = 60):
     # assert (
     #     torch.cuda.is_available()
     # ), "CUDA is not available, please check your environment"
@@ -811,14 +811,14 @@ def get_smplx_mesh(model_path,image_list,mask_list,smplx_mesh_output_path,fps):
         "save_root": "",
         "save_mesh_root": "",
         "model_path": model_path,
-        "pad_ratio": 0.,
+        "pad_ratio": 0,
         "kp_mode": "vitpose",
         "visualize": False,
         }
     opt = OmegaConf.create(args_dict)
 
 
-    FOV = 60  # follow the setting of multihmr
+      # follow the setting of multihmr 
     device = torch.device("cuda")
 
     pipeline = Video2MotionPipeline(
@@ -826,7 +826,7 @@ def get_smplx_mesh(model_path,image_list,mask_list,smplx_mesh_output_path,fps):
         device,
         kp_mode=opt.kp_mode,
         visualize=opt.visualize,
-        pad_ratio=0.,
+        pad_ratio=0,
         fov=FOV,
         fps=fps,
     )
