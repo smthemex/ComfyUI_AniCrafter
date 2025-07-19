@@ -2,9 +2,9 @@
 [AniCrafter](https://github.com/MyNiuuu/AniCrafter): Customizing Realistic Human-Centric Animation via Avatar-Background Conditioning in Video Diffusion Models, you can try this methods  when use ComfyUI.
 
 # Update 
+* 0719 新增镜头fov参数，全身镜头默认60，对于广角镜头需要调节至小于45，否则smplx的人物占比会变小，模型支持480P，似乎有色差；
 * 0718 新增mmgp模式可选，高GPU和VRAM 可以选none或high模式，修改部分代码，尝试解决diffsynth模块在不同节点中的冲突 ，新增bgkb视频可选输入（背景去掉人物内绘，推荐用插件[ComfyUI_DiffuEraser](https://github.com/smthemex/ComfyUI_DiffuEraser)），请使用最新的workflow.
-* 0715 修复无法重复推理的bug，修复高斯np文件加载device错误，修复输入图片自动裁切错误,example 新增测试用的华仔及其np文件和美少女跳舞内容；
-* 支持自定义视频的推理，支持预处理视频（mask，背景内绘及smplx剪辑）和json文件的 以及gaussian.pth的复用（首次生成需要选择none）；为避免人脸失真，推理尺寸越大越好。等下个周末再修复一些bug吧。
+* 支持自定义视频的推理，支持预处理视频（mask，背景内绘及smplx剪辑）和json文件的 以及gaussian.pth的复用（首次生成需要选择none）；为避免人脸失真，推理尺寸越大越好（使用720P模型时）。
 * need another weekend to fix bugs
 
 # 1. Installation
@@ -76,14 +76,14 @@ str_ = builtins.str
 |   ├── models_t5_umt5-xxl-enc-bf16.pth
 ```
 * 3.3 gfpgan auto download/gfpgan 自动下载
-* 3.4 Wan2.1-I2V-14B-720P single model  from here [Kijai/WanVideo_comfy](https://huggingface.co/Kijai/WanVideo_comfy/tree/main) 下载KJ的单体wan模型，全量跑不动
+* 3.4 Wan2.1-I2V-14B-720P  or Wan2.1-I2V-14B-480P  single model  from here [Kijai/WanVideo_comfy](https://huggingface.co/Kijai/WanVideo_comfy/tree/main) 下载KJ的单体wan模型  
 ```
 ├── your comfyUI/models/diffusion_models/
-|   ├──Wan2_1-I2V-14B-720P_fp8_e4m3fn.safetensors  #kj 16G
+|   ├──Wan2_1-I2V-14B-720P_fp8_e4m3fn.safetensors  # or  Wan2_1-I2V-14B-480P_fp8_e4m3fn.safetensors  #16G
 ```
 
 # Example
-![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example0715.gif)
+![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example.gif)
 
 
 #Citation
