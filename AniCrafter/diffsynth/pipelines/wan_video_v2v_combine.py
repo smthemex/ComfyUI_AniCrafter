@@ -3,7 +3,7 @@ from ..models.wan_video_dit import WanModel
 from ..models.wan_video_text_encoder import WanTextEncoder
 from ..models.wan_video_vae import WanVideoVAE
 from ..models.wan_video_image_encoder import WanImageEncoder
-from ..schedulers.flow_match import FlowMatchScheduler
+from ..schedulers.flow_match import FlowMatchScheduler,WanStepDistillScheduler
 from .base import BasePipeline
 from ..prompters import WanPrompter_ as WanPrompter
 import torch, os
@@ -141,9 +141,13 @@ tokenizer_path_=os.path.join(folder_paths.base_path,"custom_nodes\ComfyUI_AniCra
 
 class WanMovieCrafterCombineVideoPipeline_(BasePipeline):
 
-    def __init__(self, device="cuda", torch_dtype=torch.float16, tokenizer_path=tokenizer_path_):
+    def __init__(self, device="cuda", torch_dtype=torch.float16, tokenizer_path=tokenizer_path_, config=None):
+
         super().__init__(device=device, torch_dtype=torch_dtype)
-        self.scheduler = FlowMatchScheduler(shift=5, sigma_min=0.0, extra_one_step=True)
+        
+        self.scheduler = WanStepDistillScheduler(config) if config is not None else FlowMatchScheduler(shift=5, sigma_min=0.0, extra_one_step=True)
+        self.uselcm = False if config is None else True
+        #self.scheduler = FlowMatchScheduler(shift=5, sigma_min=0.0, extra_one_step=True)
         #self.prompter = WanPrompter(tokenizer_path=tokenizer_path)
         self.prompter : WanPrompter= None
         self.text_encoder: WanTextEncoder = None
@@ -316,12 +320,14 @@ class WanMovieCrafterCombineVideoPipeline_(BasePipeline):
 
 
     @staticmethod
-    def from_model_manager(model_manager: ModelManager, torch_dtype=None, device=None):
+    def from_model_manager(model_manager: ModelManager, torch_dtype=None, device=None, config=None):
+
         if device is None: device = model_manager.device
         if torch_dtype is None: torch_dtype = model_manager.torch_dtype
         pipe = WanMovieCrafterCombineVideoPipeline_(
             device=device, 
             torch_dtype=torch_dtype, 
+            config=config
         )
         pipe.fetch_models(model_manager)
         #model_manager._clean_lora_cache()
@@ -478,8 +484,11 @@ class WanMovieCrafterCombineVideoPipeline_(BasePipeline):
         tiler_kwargs = {"tiled": tiled, "tile_size": tile_size, "tile_stride": tile_stride}
 
         # Scheduler
-        self.scheduler.set_timesteps(num_inference_steps, denoising_strength=denoising_strength, shift=sigma_shift)
-
+        if self.uselcm :
+            self.scheduler.denoising_step_list=get_denoising_step_list(num_inference_steps) #动态调整list
+            self.scheduler.set_denoising_timesteps(device=self.device)
+        else:
+             self.scheduler.set_timesteps(num_inference_steps, denoising_strength=denoising_strength, shift=sigma_shift)
         # Initialize noise
         noise = self.generate_noise((1, 16, (num_frames - 1) // 4 + 1, height//8, width//8), seed=seed, device=rand_device, dtype=torch.float32)
         noise = noise.to(dtype=self.torch_dtype, device=self.device)
@@ -488,7 +497,10 @@ class WanMovieCrafterCombineVideoPipeline_(BasePipeline):
             input_video = self.preprocess_images(input_video)
             input_video = torch.stack(input_video, dim=2).to(dtype=self.torch_dtype, device=self.device)
             latents = self.encode_video(input_video, **tiler_kwargs).to(dtype=self.torch_dtype, device=self.device)
-            latents = self.scheduler.add_noise(latents, noise, timestep=self.scheduler.timesteps[0])
+            if not self.uselcm :
+                latents = self.scheduler.add_noise(latents, noise, timestep=self.scheduler.timesteps[0])
+            else:
+                latents = self.scheduler.add_noise(latents, noise, self.scheduler.sigmas[0])
         else:
             latents = noise
         
@@ -570,22 +582,40 @@ class WanMovieCrafterCombineVideoPipeline_(BasePipeline):
         # condition
         condition = blend_data + smplx_data
         condition = rearrange(condition, 'b c f h w -> b (f h w) c').contiguous()
+        if not self.uselcm:
+            for progress_id, timestep in enumerate(progress_bar_cmd(self.scheduler.timesteps)):
+                timestep = timestep.unsqueeze(0).to(dtype=self.torch_dtype, device=self.device)
 
-        for progress_id, timestep in enumerate(progress_bar_cmd(self.scheduler.timesteps)):
-            timestep = timestep.unsqueeze(0).to(dtype=self.torch_dtype, device=self.device)
+                # Inference
+                model_input = latents
+                noise_pred_posi = model_fn_wan_video(self.dit, model_input, timestep=timestep, **prompt_emb_posi, **image_emb, **extra_input, **tea_cache_posi, add_condition = condition)
+                ## noise_pred_posi = model_fn_wan_video(self.dit, latents, timestep=timestep, **prompt_emb_posi, **image_emb, **extra_input, **tea_cache_posi)
+                if cfg_scale != 1.0:
+                    noise_pred_nega = model_fn_wan_video(self.dit, latents, timestep=timestep, **prompt_emb_nega, **image_emb, **extra_input, **tea_cache_nega)
+                    noise_pred = noise_pred_nega + cfg_scale * (noise_pred_posi - noise_pred_nega)
+                else:
+                    noise_pred = noise_pred_posi
 
-            # Inference
-            model_input = latents
-            noise_pred_posi = model_fn_wan_video(self.dit, model_input, timestep=timestep, **prompt_emb_posi, **image_emb, **extra_input, **tea_cache_posi, add_condition = condition)
-            # noise_pred_posi = model_fn_wan_video(self.dit, latents, timestep=timestep, **prompt_emb_posi, **image_emb, **extra_input, **tea_cache_posi)
-            if cfg_scale != 1.0:
-                noise_pred_nega = model_fn_wan_video(self.dit, latents, timestep=timestep, **prompt_emb_nega, **image_emb, **extra_input, **tea_cache_nega)
-                noise_pred = noise_pred_nega + cfg_scale * (noise_pred_posi - noise_pred_nega)
-            else:
-                noise_pred = noise_pred_posi
+                # Scheduler
+                latents = self.scheduler.step(noise_pred, self.scheduler.timesteps[progress_id], latents)
+        else:
+            for progress_id in progress_bar_cmd(range(len(self.scheduler.sigmas))):
+                timestep = self.scheduler.timesteps[progress_id]
+                # Inference
+                model_input = latents
+                noise_pred_posi = model_fn_wan_video(self.dit, model_input, timestep=timestep.unsqueeze(0).to(dtype=self.torch_dtype, device=self.device), **prompt_emb_posi, **image_emb, **extra_input, **tea_cache_posi, add_condition = condition)
+                if cfg_scale != 1.0:
+                    noise_pred_nega = model_fn_wan_video(self.dit, latents, timestep=timestep.unsqueeze(0).to(dtype=self.torch_dtype, device=self.device), **prompt_emb_nega, **image_emb, **extra_input, **tea_cache_nega)
+                    noise_pred = noise_pred_nega + cfg_scale * (noise_pred_posi - noise_pred_nega)
+                else:
+                    noise_pred = noise_pred_posi
 
-            # Scheduler
-            latents = self.scheduler.step(noise_pred, self.scheduler.timesteps[progress_id], latents)
+                # Scheduler
+                self.scheduler.noise_pred = noise_pred
+                self.scheduler.latents = latents
+                self.scheduler.step_index = progress_id
+                self.scheduler.step_post()
+                latents = self.scheduler.latents
 
         # Decode
         self.load_models_to_device(['vae'])
@@ -1425,3 +1455,10 @@ class WanRepalceAnyoneVideoPipeline(BasePipeline):
         #frames = self.tensor2video(frames[0])
         frames=rearrange(frames[0], "C T H W -> T H W C")
         return frames
+    
+
+def get_denoising_step_list(num_inference_steps, max_step=1000, min_step=0):
+    """
+    根据步数自动生成 denoising_step_list，等间隔采样。
+    """
+    return np.linspace(max_step, min_step, num_inference_steps, dtype=int).tolist()
