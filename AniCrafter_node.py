@@ -7,7 +7,7 @@ import numpy as np
 from torchvision.transforms import v2
 from .AniCrafter.diffsynth import ModelManager_
 from .node_utils import gc_cleanup,tensor2pil_upscale,tensor2pil_list,find_gaussian_files,load_images,find_directories,tensor_to_pil
-#from .AniCrafter.run_pipeline_with_preprocess import prepare_models,predata_for_anicrafter,infer_anicrafter
+from omegaconf import OmegaConf
 from .AniCrafter.run_pipeline import predata_for_anicrafter_dispre,prepare_models,infer_anicrafter
 import folder_paths
 from .AniCrafter.diffsynth.prompters import WanPrompter_ 
@@ -312,6 +312,7 @@ class AniCrafterSampler:
                 "seed": ("INT", {"default": 0, "min": 0, "max": MAX_SEED}),
                 "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 2048, "step": 1, "display": "number"}),
                 "cfg_value": ("FLOAT", {"default": 1.5, "min": 0.1, "max": 20.0, "step": 0.1}),
+                "schedulers":  (["flow","lcm","unipc"],),
                 "use_teacache": ("BOOLEAN", {"default": True},),
                 "use_tiled": ("BOOLEAN", {"default": True},),
             }}
@@ -321,15 +322,43 @@ class AniCrafterSampler:
     FUNCTION = "sampler_main"
     CATEGORY = "AniCrafter"
 
-    def sampler_main(self,text_emb, data_dict, model, seed, num_inference_steps,cfg_value, use_teacache,use_tiled,):
+    def sampler_main(self,text_emb, data_dict, model, seed, num_inference_steps,cfg_value, schedulers,use_teacache,use_tiled,):
 
         wan_repo=model.get("wan_repo")
         model=model.get("pipe")
+
+
+        if schedulers=="lcm":
+            lcm_config = {
+            "infer_steps": 4,
+            "target_video_length": 81,
+            "target_height": 480,
+            "target_width": 832,
+            "self_attn_1_type": "flash_attn3",
+            "cross_attn_1_type": "flash_attn3",
+            "cross_attn_2_type": "flash_attn3",
+            "seed": 442,
+            "sample_guide_scale": 5,
+            "denoising_step_list": [1000, 750, 500, 250],
+            "sample_shift": 5,
+            "enable_cfg": False,
+            "cpu_offload": False,
+                }
+            
+            config_ =OmegaConf.create(lcm_config)
+            from .AniCrafter.diffsynth.schedulers.flow_match import WanStepDistillScheduler
+            model.scheduler = WanStepDistillScheduler(config_)
+            model.uselcm = True
+        elif schedulers=="unipc":
+            from .AniCrafter.diffsynth.schedulers.fm_solvers_unipc import FlowUniPCMultistepScheduler
+            model.scheduler = FlowUniPCMultistepScheduler(num_train_timesteps=1000, solver_order=2)
+            model.useunipc = True
+
         print("***********Start infer  ***********")
 
         iamges = infer_anicrafter(model, data_dict.get("ref_combine_blend_tensor"),data_dict.get("ref_combine_smplx_tensor"),
                                  data_dict.get("height"),data_dict.get("width"),
-                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict,wan_repo)
+                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict,schedulers,wan_repo)
         gc.collect()
         torch.cuda.empty_cache()
         return (load_images(iamges), data_dict.get("fps"))
