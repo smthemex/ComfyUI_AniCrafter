@@ -485,7 +485,7 @@ class WanMovieCrafterCombineVideoPipeline_(BasePipeline):
 
         # Scheduler
         if self.uselcm :
-            self.scheduler.denoising_step_list=get_denoising_step_list(num_inference_steps) #动态调整list
+            #self.scheduler.denoising_step_list=get_denoising_step_list(num_inference_steps) #动态调整list
             self.scheduler.set_denoising_timesteps(device=self.device)
         else:
              self.scheduler.set_timesteps(num_inference_steps, denoising_strength=denoising_strength, shift=sigma_shift)
