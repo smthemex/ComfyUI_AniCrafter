@@ -1,0 +1,647 @@
+{
+  "id": "b0139aec-f7b6-4fcc-a0d8-e789bb290326",
+  "revision": 0,
+  "last_node_id": 17,
+  "last_link_id": 24,
+  "nodes": [
+    {
+      "id": 15,
+      "type": "Note",
+      "pos": [
+        21262.173828125,
+        -1439.229248046875
+      ],
+      "size": [
+        321.5454406738281,
+        162.5454559326172
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "fov用于调节smplx的镜头视场，广角镜头的半身/人头垫图需要用到45或者更小，全身则默认用60，\nGaussian files 如果你没有更换垫图，可以选择上次垫图生成的np文件以减少计算量；\npre_video dir 如果并未更换参考视频和分辨率，可以在此选择上次生成的文件，以减少计算量（如果你使用bkgb外置文件时，dir里不会有bkgb视频文件，所以再次使用时，必须继续连接外置bkgb视频）"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 6,
+      "type": "AniCrafterPreText",
+      "pos": [
+        20427.08203125,
+        -1488.015869140625
+      ],
+      "size": [
+        400,
+        214
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "text_emb",
+          "type": "AniCrafter_TEXT",
+          "links": [
+            5
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "AniCrafterPreText"
+      },
+      "widgets_values": [
+        "models_t5_umt5-xxl-enc-bf16.pth",
+        false,
+        true,
+        "human in a scene",
+        "细节模糊不清，字幕，作品，画作，画面，静止，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，杂乱的背景，三条腿，背景人很多，倒着走"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "AniCrafterLoader",
+      "pos": [
+        20838.943359375,
+        -1073.519287109375
+      ],
+      "size": [
+        278,
+        231
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MODEL_AniCrafter",
+          "links": [
+            23
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "AniCrafterLoader"
+      },
+      "widgets_values": [
+        "Wan2_1-I2V-14B-480P_fp8_e4m3fn.safetensors",
+        "Wan2.1_VAE.pth",
+        "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
+        "none",
+        1,
+        1,
+        1,
+        "LowRAM_LowVRAM"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "AniCrafterPreVideo",
+      "pos": [
+        20882.451171875,
+        -1475.5927734375
+      ],
+      "size": [
+        340.9090881347656,
+        310
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image_data",
+          "type": "AniCrafter_DATA",
+          "link": 19
+        },
+        {
+          "name": "video_image",
+          "type": "IMAGE",
+          "link": 20
+        },
+        {
+          "name": "video_mask",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "video_bkgd",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "widget": {
+            "name": "fps"
+          },
+          "link": 24
+        }
+      ],
+      "outputs": [
+        {
+          "name": "data_dict",
+          "type": "AniCrafter_PREDATA",
+          "links": [
+            21
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "AniCrafterPreVideo"
+      },
+      "widgets_values": [
+        "F:\\ComfyUI311\\ComfyUI\\input\\AniCrafter_20250721_202459_gaussian.pth",
+        768,
+        448,
+        80,
+        24,
+        45,
+        true,
+        true,
+        "AniCrafter_20250719_171839"
+      ]
+    },
+    {
+      "id": 11,
+      "type": "VHS_VideoInfo",
+      "pos": [
+        20570.458984375,
+        -1066.5177001953125
+      ],
+      "size": [
+        225.59765625,
+        206
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video_info",
+          "type": "VHS_VIDEOINFO",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "name": "source_fps🟨",
+          "type": "FLOAT",
+          "links": [
+            24
+          ]
+        },
+        {
+          "name": "source_frame_count🟨",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "source_duration🟨",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "source_width🟨",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "source_height🟨",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "loaded_fps🟦",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "loaded_frame_count🟦",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "loaded_duration🟦",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "loaded_width🟦",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "loaded_height🟦",
+          "type": "INT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_VideoInfo"
+      },
+      "widgets_values": {}
+    },
+    {
+      "id": 1,
+      "type": "AniCrafterPreImage",
+      "pos": [
+        20131.4453125,
+        -1256.1209716796875
+      ],
+      "size": [
+        270,
+        130
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "role_image",
+          "type": "IMAGE",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_data",
+          "type": "AniCrafter_DATA",
+          "links": [
+            19
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "AniCrafterPreImage"
+      },
+      "widgets_values": [
+        "models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth",
+        true
+      ]
+    },
+    {
+      "id": 4,
+      "type": "AniCrafterSampler",
+      "pos": [
+        21137.48828125,
+        -1081.0111083984375
+      ],
+      "size": [
+        278.73828125,
+        242
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text_emb",
+          "type": "AniCrafter_TEXT",
+          "link": 5
+        },
+        {
+          "name": "data_dict",
+          "type": "AniCrafter_PREDATA",
+          "link": 21
+        },
+        {
+          "name": "model",
+          "type": "MODEL_AniCrafter",
+          "link": 23
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            6
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "links": [
+            9
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "AniCrafterSampler"
+      },
+      "widgets_values": [
+        1923808620,
+        "randomize",
+        10,
+        1,
+        "unipc",
+        false,
+        true
+      ]
+    },
+    {
+      "id": 9,
+      "type": "LoadImage",
+      "pos": [
+        21112.908203125,
+        -804.4859619140625
+      ],
+      "size": [
+        306.013427734375,
+        471.0931091308594
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            8
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "3736c69fb7ce5b795ff78a607d3bda37 (1).jpeg",
+        "image"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "VHS_LoadVideo",
+      "pos": [
+        20788.357421875,
+        -798.3551635742188
+      ],
+      "size": [
+        293.1792907714844,
+        433.0780944824219
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "meta_batch",
+          "shape": 7,
+          "type": "VHS_BatchManager",
+          "link": null
+        },
+        {
+          "name": "vae",
+          "shape": 7,
+          "type": "VAE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            20
+          ]
+        },
+        {
+          "name": "frame_count",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": null
+        },
+        {
+          "name": "video_info",
+          "type": "VHS_VIDEOINFO",
+          "links": [
+            13
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadVideo"
+      },
+      "widgets_values": {
+        "video": "微信视频2025-07-17_115428_246.mp4",
+        "force_rate": 0,
+        "force_size": "Disabled",
+        "custom_width": 512,
+        "custom_height": 512,
+        "frame_load_cap": 0,
+        "skip_first_frames": 0,
+        "select_every_nth": 1,
+        "choose video to upload": "image",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "frame_load_cap": 0,
+            "skip_first_frames": 0,
+            "force_rate": 0,
+            "filename": "微信视频2025-07-17_115428_246.mp4",
+            "type": "input",
+            "format": "video/mp4",
+            "select_every_nth": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "VHS_VideoCombine",
+      "pos": [
+        21453.47265625,
+        -1157.385498046875
+      ],
+      "size": [
+        521.5399780273438,
+        859.95703125
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 6
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "meta_batch",
+          "shape": 7,
+          "type": "VHS_BatchManager",
+          "link": null
+        },
+        {
+          "name": "vae",
+          "shape": 7,
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "frame_rate",
+          "type": "FLOAT",
+          "widget": {
+            "name": "frame_rate"
+          },
+          "link": 9
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Filenames",
+          "type": "VHS_FILENAMES",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_VideoCombine"
+      },
+      "widgets_values": {
+        "frame_rate": 24,
+        "loop_count": 0,
+        "filename_prefix": "AnimateDiff",
+        "format": "video/h264-mp4",
+        "pix_fmt": "yuv420p",
+        "crf": 19,
+        "save_metadata": true,
+        "pingpong": false,
+        "save_output": true,
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "AnimateDiff_00013.mp4",
+            "subfolder": "",
+            "type": "output",
+            "format": "video/h264-mp4",
+            "frame_rate": 23.00002440701716
+          }
+        }
+      }
+    }
+  ],
+  "links": [
+    [
+      5,
+      6,
+      0,
+      4,
+      0,
+      "AniCrafter_TEXT"
+    ],
+    [
+      6,
+      4,
+      0,
+      7,
+      0,
+      "IMAGE"
+    ],
+    [
+      8,
+      9,
+      0,
+      1,
+      0,
+      "IMAGE"
+    ],
+    [
+      9,
+      4,
+      1,
+      7,
+      4,
+      "FLOAT"
+    ],
+    [
+      13,
+      3,
+      3,
+      11,
+      0,
+      "VHS_VIDEOINFO"
+    ],
+    [
+      19,
+      1,
+      0,
+      14,
+      0,
+      "AniCrafter_DATA"
+    ],
+    [
+      20,
+      3,
+      0,
+      14,
+      1,
+      "IMAGE"
+    ],
+    [
+      21,
+      14,
+      0,
+      4,
+      1,
+      "AniCrafter_PREDATA"
+    ],
+    [
+      23,
+      17,
+      0,
+      4,
+      2,
+      "MODEL_AniCrafter"
+    ],
+    [
+      24,
+      11,
+      0,
+      14,
+      4,
+      "FLOAT"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6830134553650705,
+      "offset": [
+        -19962.118792181263,
+        1542.6198736886763
+      ]
+    },
+    "frontendVersion": "1.23.4"
+  },
+  "version": 0.4
+}
