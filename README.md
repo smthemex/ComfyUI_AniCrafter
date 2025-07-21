@@ -2,7 +2,7 @@
 [AniCrafter](https://github.com/MyNiuuu/AniCrafter): Customizing Realistic Human-Centric Animation via Avatar-Background Conditioning in Video Diffusion Models, you can try this methods  when use ComfyUI.
 
 # Update 
-* 0720 适配lightX2V的 LCM调度器，在额外的lora加载时生效，修改预处理视频文件列表加载逻辑，去掉bgkb视频的必要条件。
+* 0721 适配lightX2V的 LCM调度器（4步，代码直接从lightX2V获取） UniPC调度器(10步，代码直接从KJ那拿的)，修改预处理视频文件列表加载逻辑，去掉bgkb视频的必要条件。
 * 0719 pm 新增lightX2V lora加载和常规style lora加载菜单，如果使用lightX2V lora，cfg请调整为1，推荐步数6步，风格lora需要填写prompt；
 * 0719 新增镜头fov参数，全身镜头默认60，对于广角镜头需要调节至小于45，否则smplx的人物占比会变小，模型支持480P；
 * 0718 新增mmgp模式可选，高GPU和VRAM 可以选none或high模式，新增bgkb视频可选输入（背景去掉人物内绘，推荐用插件[ComfyUI_DiffuEraser](https://github.com/smthemex/ComfyUI_DiffuEraser)），请使用最新的workflow.
@@ -100,7 +100,7 @@ for m in list(sys.modules):
 
 # Example
 * new use lightx2v
-![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example.png)
+![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example0721.png)
 *   version
 ![](https://github.com/smthemex/ComfyUI_AniCrafter/blob/main/example_workflows/example.gif)
 
