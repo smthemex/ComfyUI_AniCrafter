@@ -358,7 +358,7 @@ class AniCrafterSampler:
 
         iamges = infer_anicrafter(model, data_dict.get("ref_combine_blend_tensor"),data_dict.get("ref_combine_smplx_tensor"),
                                  data_dict.get("height"),data_dict.get("width"),
-                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict,schedulers,wan_repo)
+                                 num_inference_steps,seed ,use_teacache,cfg_value,use_tiled,text_emb,data_dict,wan_repo)
         gc.collect()
         torch.cuda.empty_cache()
         return (load_images(iamges), data_dict.get("fps"))
