@@ -7,7 +7,7 @@ from tqdm import tqdm
 import json
 import math
 import cv2
-from omegaconf import OmegaConf
+
 from datetime import datetime
 from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
 from pytorch3d.transforms import matrix_to_quaternion
@@ -327,25 +327,10 @@ def prepare_models(dit_path,vae_path, lora_ckpt_path,lora_alpha=1.0,lora_path=No
             model_manager.load_lora_v2_combine(lora_p, lora_alpha=lora_extra_alpha[i])
     
     # assert False
-    wan_config = {
-    "infer_steps": 4,
-    "target_video_length": 81,
-    "target_height": 480,
-    "target_width": 832,
-    "self_attn_1_type": "flash_attn3",
-    "cross_attn_1_type": "flash_attn3",
-    "cross_attn_2_type": "flash_attn3",
-    "seed": 442,
-    "sample_guide_scale": 5,
-    "denoising_step_list": [1000, 750, 500, 250],
-    "sample_shift": 5,
-    "enable_cfg": False,
-    "cpu_offload": False,
-        }
-    config_ =OmegaConf.create(wan_config) if lora_path and lora_extra_alpha  else None
+   
 
     pipe = WanMovieCrafterCombineVideoPipeline.from_model_manager(
-        model_manager, torch_dtype=torch.bfloat16, device="cuda",config=config_
+        model_manager, torch_dtype=torch.bfloat16, device="cuda",
     )
     pipe.enable_vram_management()
 
@@ -565,7 +550,7 @@ def predata_for_anicrafter_dispre(frame_process_norm,image_list,character_image,
 
 def infer_anicrafter(pipe, ref_combine_blend_tensor,ref_combine_smplx_tensor,height,width,num_inference_steps,seed,use_teacache,cfg_value,use_tiled,text_emb,image_emb,wan_repo="Wan2.1-I2V-14B-720P"):
     
-
+  
     
     # Image-to-video
     try: 
