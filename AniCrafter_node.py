@@ -145,7 +145,7 @@ class AniCrafterPreVideo:
                 "gaussian_files": (gaussian_files_list,),
                 "width": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 16, "display": "number"}),
                 "height": ("INT", {"default": 768, "min": 256, "max": 2048, "step": 16, "display": "number"}),
-                "max_frames": ("INT", {"default": 80, "min": 8, "max": 2048, "step": 4, "display": "number"}),
+                "max_frames": ("INT", {"default": 80, "min": 8, "max": 80, "step": 4, "display": "number"}),
                 "fps": ("FLOAT", {"default": 24.0, "min": 5.0, "max": 120.0, "step": 1.0}),
                 "camera_fov":("INT", {"default": 60, "min": 10, "max": 100, "step": 5, "display": "number"}),
                 "clean_up": ("BOOLEAN", {"default": True},),
