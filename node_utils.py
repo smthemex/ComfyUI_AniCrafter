@@ -33,10 +33,10 @@ def find_directories(base_path):
             if not os.path.isdir(smplx_dir):
                 continue
             # 检查两个视频文件是否存在
-            has_bkgd = any(f.endswith('bkgd_video.mp4') for f in os.listdir(dir_path))
+            # has_bkgd = any(f.endswith('bkgd_video.mp4') for f in os.listdir(dir_path))
             has_smplx = any(f.endswith('smplx_video.mp4') for f in os.listdir(dir_path))
             
-            if has_bkgd and has_smplx:
+            if  has_smplx:
                 directories.append(name)
     return directories
 
