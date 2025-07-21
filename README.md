@@ -2,9 +2,10 @@
 [AniCrafter](https://github.com/MyNiuuu/AniCrafter): Customizing Realistic Human-Centric Animation via Avatar-Background Conditioning in Video Diffusion Models, you can try this methods  when use ComfyUI.
 
 # Update 
-* 0719 pm 新增lightX2V lora加载和常规style lora加载菜单，如果使用lightX2V lora，cfg请调整为1，推荐步数6步，风格lora需要填写prompt暂时未适配对应的调度器；
-* 0719 新增镜头fov参数，全身镜头默认60，对于广角镜头需要调节至小于45，否则smplx的人物占比会变小，模型支持480P，似乎有色差；
-* 0718 新增mmgp模式可选，高GPU和VRAM 可以选none或high模式，修改部分代码，尝试解决diffsynth模块在不同节点中的冲突 ，新增bgkb视频可选输入（背景去掉人物内绘，推荐用插件[ComfyUI_DiffuEraser](https://github.com/smthemex/ComfyUI_DiffuEraser)），请使用最新的workflow.
+* 0720 适配lightX2V的 LCM调度器，在额外的lora加载时生效，修改预处理视频文件列表加载逻辑，去掉bgkb视频的必要条件。
+* 0719 pm 新增lightX2V lora加载和常规style lora加载菜单，如果使用lightX2V lora，cfg请调整为1，推荐步数6步，风格lora需要填写prompt；
+* 0719 新增镜头fov参数，全身镜头默认60，对于广角镜头需要调节至小于45，否则smplx的人物占比会变小，模型支持480P；
+* 0718 新增mmgp模式可选，高GPU和VRAM 可以选none或high模式，新增bgkb视频可选输入（背景去掉人物内绘，推荐用插件[ComfyUI_DiffuEraser](https://github.com/smthemex/ComfyUI_DiffuEraser)），请使用最新的workflow.
 * 支持自定义视频的推理，支持预处理视频（mask，背景内绘及smplx剪辑）和json文件的 以及gaussian.pth的复用（首次生成需要选择none）；为避免人脸失真，推理尺寸越大越好（使用720P模型时）。
 * need another weekend to fix bugs
 
@@ -24,6 +25,9 @@ pip install -r requirements.txt
 and 
 ```
 pip install mmcv_full-1.7.2
+```
+[mmcv install error look this ](https://gitee.com/Wilson_Lws/MuseTalk-50Series-Adaptation/blob/master/README.md)
+```
 pip install flash-attn --no-build-isolation
 pip install tb-nightly
 pip install git+https://github.com/XPixelGroup/BasicSR
@@ -34,18 +38,18 @@ pip install git+https://github.com/camenduru/simple-knn/
 
 ```
 
-# TIPS
-* python版本大于3.9 因为numpy的原因，需要手动修改chumpy库如下：
-* If python version >3.9,need modify 'chumpy' packeage  :  
-  -- find  '...site-packages/chumpy/ch.py' ,line 1203 ,change ' inspect.getargspec' to 'inspect.getfullargspec'
+# Install TIPS
+* 2.1 如果python版本大于3.9 因为numpy的原因，需要手动修改chumpy库如下/If python version >3.9,need modify 'chumpy' packeage  ：
+Path '...site-packages/chumpy/ch.py, line 1203 ,change 修改参数如下
 ```
-.../site-packages/chumpy/__init__.py
-```
-line 11,change
-```
-from numpy import bool, int, float, complex, object, unicode, str, nan, inf
-
+inspect.getargspec
 to
+inspect.getfullargspec
+```
+* 2.2  init.py 修改参数如下 :
+```
+.../site-packages/chumpy/__init__.py  #line 11,change
+#from numpy import bool, int, float, complex, object, unicode, str, nan, inf
 
 from numpy import complex_, object_, nan, inf
 import builtins
@@ -54,6 +58,12 @@ int_ = builtins.int
 float_ = builtins.float
 str_ = builtins.str
 ```
+* 2.3  ...Lib\site-packages\mmcv\device\npu\data_parallel.py line 20  data_parallel报错时，打开文件，修改如下（就是加个list）
+```
+#for m in sys.modules:
+for m in list(sys.modules):
+```
+  
 
 # 3  Models
 * 3.1.1 [MyNiuuu/Anicrafter_release](https://huggingface.co/MyNiuuu/Anicrafter_release/tree/main) all fiels/下载pretrained_models所有文件，保存文件夹结构
